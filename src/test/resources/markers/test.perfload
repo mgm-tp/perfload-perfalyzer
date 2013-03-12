@@ -1,0 +1,32 @@
+14697;kapesta;appserver01;1;1
+75000;lstb;appserver02;4;4
+82200;register;appserver02;9;4
+600000;[[marker]];Marker 1;left;
+89400;ustva;appserver02;5;5
+197400;ustva;appserver01;7;2
+700000;[[marker]];Marker 2;left;
+348600;ustveu;appserver01;3;3
+900000;[[marker]];Marker 1;right;
+355800;kapesta;appserver01;8;3
+363079;lstb;appserver01;4;4
+370000;[[marker]];Marker 4;left;
+371256;register;appserver01;9;4
+381116;ustva;appserver01;5;5
+1909545;ustva;appserver01;9;4
+1000000;[[marker]];Marker 2;right;
+1920854;register;appserver02;5;5
+1927920;ustva;appserver02;10;5
+1936821;register;appserver01;1;1
+2801314;register;appserver01;2;2
+2802000;lstb;appserver02;7;2
+2804545;ustva;appserver01;3;3
+1300000;[[marker]];Marker 3;left;
+1400000;[[marker]];Marker 3;right;
+2804743;register;appserver02;8;3
+2808171;register;appserver01;4;4
+2808182;ustva;appserver02;9;4
+3956743;register;appserver02;9;4
+1700000;[[marker]];Marker 4;right;
+3957273;ustva;appserver02;5;5
+3960171;register;appserver01;10;5
+3960909;ustva;appserver01;1;1

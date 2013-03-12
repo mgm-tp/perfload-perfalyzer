@@ -1,0 +1,83 @@
+/**
+ * Copyright (c) 2013 mgm technology partners GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+html,body,h1,h2,div,span,table,tr,th,td {
+	border: 0 none;
+	margin: 0;
+	padding: 0;
+	background-color: white;
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: 12px;
+	color: #333333;
+}
+
+html { #
+	overflow-y: scroll;
+}
+
+h1 {
+	font-size: 16px;
+	text-shadow: 0 1px 0 #DDDDDD;
+	margin-top: 6px;
+	margin-left: 9px;
+	margin-bottom: 3px;
+}
+
+h2 {
+	font-size: 12px;
+	text-shadow: 0 1px 0 #DDDDDD;
+	margin-left: 9px;
+	margin-bottom: 3px;
+}
+
+.header {
+	border: 1px solid #D8D8D8;
+	background: none repeat scroll 0 0 #FCFCFC;
+	color: #555555;
+	font-weight: bold;
+	font-size: 14px;
+	padding: 6px 3px;
+	text-shadow: 0 1px 0 #FFFFFF;
+}
+
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+	border: 1px solid #D8D8D8;
+	padding: 3px;
+	margin: 6px 6px 12px 6px;
+}
+
+th {
+	background: none repeat scroll 0 0 #EAEAEA;
+	border: 1px solid #D8D8D8;
+	color: #555555;
+	font-weight: bold;
+	padding: 3px;
+	text-align: left;
+	text-shadow: 0 1px 0 #FFFFFF;
+}
+
+td {
+	background: none repeat scroll 0 0 #FCFCFC;
+	border: 1px solid #D8D8D8;
+	color: #484848;
+	padding: 5px;
+	vertical-align: middle;
+}
+
+#content {
+	margin: 0;
+}
