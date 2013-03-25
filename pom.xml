@@ -38,8 +38,8 @@
 		<connection>scm:git:git://github.com/mgm-tp/perfload-perfalyzer.git</connection>
 		<developerConnection>scm:git:ssh://git@github.com/mgm-tp/perfload-perfalyzer.git</developerConnection>
 		<url>https://github.com/mgm-tp/perfload-perfalyzer</url>
-	  <tag>HEAD</tag>
-  </scm>
+		<tag>HEAD</tag>
+	</scm>
 
 	<licenses>
 		<license>
