@@ -17,6 +17,7 @@
 
 
 cd `dirname $0`
+
 [ -f setenv.sh ] && . ./setenv.sh
 
 if [ "x$JAVA_HOME" = "x" ] ; then

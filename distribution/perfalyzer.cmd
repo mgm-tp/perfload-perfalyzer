@@ -20,6 +20,7 @@
 set EXIT_CODE=0
 
 cd %~dp0
+
 if exist setenv.cmd call setenv.cmd
 
 if not "%JAVA_HOME%" == "" goto gotJavaHome
