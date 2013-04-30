@@ -207,9 +207,9 @@
 			<version>2.0.5</version>
 		</dependency>
 		<dependency>
-			<groupId>com.mgmtp.gcviewer</groupId>
+			<groupId>com.github.chewiebug</groupId>
 			<artifactId>gcviewer</artifactId>
-			<version>1.32-rc-1</version>
+			<version>1.32</version>
 		</dependency>
 		<dependency>
 			<groupId>com.mgmtp.mgm-mail</groupId>
