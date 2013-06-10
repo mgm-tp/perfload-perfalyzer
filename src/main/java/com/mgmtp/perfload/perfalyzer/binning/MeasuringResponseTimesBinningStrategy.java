@@ -53,7 +53,6 @@ import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Longs;
-import com.mgmtp.perfload.perfalyzer.PerfAlyzerException;
 import com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants;
 import com.mgmtp.perfload.perfalyzer.util.ChannelManager;
 import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
@@ -279,7 +278,8 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 
 	static class MedianBinManager extends ChannelBinManager {
 
-		private final List<Double> binValues = newArrayListWithExpectedSize(42);
+		private List<Double> binValues;
+		private boolean completingLastBin;
 
 		public MedianBinManager(final int binSize, final WritableByteChannel destChannel, final String header1,
 				final String header2,
@@ -288,24 +288,27 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 		}
 
 		public void addBinValue(final double seconds) {
+			if (binValues == null) {
+				binValues = newArrayListWithExpectedSize(42);
+			}
 			binValues.add(seconds);
 		}
 
 		@Override
 		protected void binCompleted(final int bin, final long counter) {
-			try {
-				if (!binValues.isEmpty()) {
-					double median = StatUtils.percentile(Doubles.toArray(binValues), 50d);
-
-					StrBuilder sb = new StrBuilder();
-					appendEscapedAndQuoted(sb, DELIMITER, numberFormat.format(bin));
-					appendEscapedAndQuoted(sb, DELIMITER, numberFormat.format(median));
-					writeLineToChannel(destChannel, sb.toString(), charset);
-				}
+			if (starting || completingLastBin) {
+				formatAndWriteToChannel(bin, counter);
+			} else if (!binValues.isEmpty()) {
+				double median = StatUtils.percentile(Doubles.toArray(binValues), 50d);
+				formatAndWriteToChannel(bin, median);
 				binValues.clear();
-			} catch (IOException ex) {
-				throw new PerfAlyzerException(ex.getMessage(), ex);
 			}
+		}
+
+		@Override
+		public void completeLastBin() {
+			completingLastBin = true;
+			super.completeLastBin();
 		}
 	}
 }

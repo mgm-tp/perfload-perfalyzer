@@ -78,10 +78,14 @@ public class ChannelBinManager extends BinManager {
 
 	@Override
 	protected void binCompleted(final int bin, final long counter) {
+		formatAndWriteToChannel(bin, counter);
+	}
+
+	protected void formatAndWriteToChannel(final int bin, final Number value) {
 		try {
 			StrBuilder sb = new StrBuilder();
 			appendEscapedAndQuoted(sb, DELIMITER, numberFormat.format(bin));
-			appendEscapedAndQuoted(sb, DELIMITER, numberFormat.format(counter));
+			appendEscapedAndQuoted(sb, DELIMITER, numberFormat.format(value));
 			writeLineToChannel(destChannel, sb.toString(), charset);
 		} catch (IOException ex) {
 			throw new PerfAlyzerException(ex.getMessage(), ex);
