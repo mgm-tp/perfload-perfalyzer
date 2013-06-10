@@ -17,14 +17,14 @@ From: 'an unknown organization'
     License: Bouncy Castle License  (http://www.bouncycastle.org/licence.html)
   - JCommander (http://beust.com/jcommander) com.beust:jcommander:jar:1.30
     License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
+  - GCViewer (http://github.com/chewiebug/GCViewer/wiki) com.github.chewiebug:gcviewer:jar:1.32
+    License: GNU Lesser General Public License 2.1  (http://www.gnu.org/licenses/lgpl.txt)
   - FindBugs-jsr305 (http://findbugs.sourceforge.net/) com.google.code.findbugs:jsr305:jar:2.0.1
     License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
   - Guava: Google Core Libraries for Java (http://code.google.com/p/guava-libraries/guava) com.google.guava:guava:jar:13.0.1
     License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
   - iText, a Free Java-PDF library (http://www.lowagie.com/iText/) com.lowagie:itext:jar:2.1.5
     License: Mozilla Public License  (http://www.mozilla.org/MPL/MPL-1.1.html)
-  - GCViewer (http://github.com/chewiebug/GCViewer/wiki) com.mgmtp.gcviewer:gcviewer:jar:1.32-rc-1
-    License: GNU Lesser General Public License 2.1  (http://www.gnu.org/licenses/lgpl.txt)
   - JavaBeans Activation Framework (JAF) (http://java.sun.com/products/javabeans/jaf/index.jsp) javax.activation:activation:jar:1.1
     License: Common Development and Distribution License (CDDL) v1.0  (https://glassfish.dev.java.net/public/CDDLv1.0.html)
   - javax.inject (http://code.google.com/p/atinject/) javax.inject:javax.inject:jar:1
