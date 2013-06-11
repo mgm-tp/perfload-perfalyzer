@@ -15,12 +15,15 @@
  */
 package com.mgmtp.perfload.perfalyzer.base.marker;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import org.testng.annotations.Test;
@@ -38,22 +41,28 @@ public class MarkersReaderTest {
 
 		MarkersReader markerReader = new MarkersReader(new File("src/test/resources/markers/test.perfload"));
 
-		List<Marker> result = markerReader.readMarkers();
+		List<Marker> result = newArrayList(markerReader.readMarkers());
+		Collections.sort(result, new Comparator<Marker>() {
+			@Override
+			public int compare(final Marker o1, final Marker o2) {
+				return o1.getName().compareTo(o2.getName());
+			}
+		});
 
 		Marker marker1 = result.get(0);
 		assertThat(marker1.getName(), is(equalTo("Marker 1")));
 		assertThat(marker1.getLeftMillis(), is(equalTo(600000L)));
 		assertThat(marker1.getRightMillis(), is(equalTo(900000L)));
 
-		Marker marker3 = result.get(1);
-		assertThat(marker3.getName(), is(equalTo("Marker 3")));
-		assertThat(marker3.getLeftMillis(), is(equalTo(1300000L)));
-		assertThat(marker3.getRightMillis(), is(equalTo(1400000L)));
-
-		Marker marker2 = result.get(2);
+		Marker marker2 = result.get(1);
 		assertThat(marker2.getName(), is(equalTo("Marker 2")));
 		assertThat(marker2.getLeftMillis(), is(equalTo(700000L)));
 		assertThat(marker2.getRightMillis(), is(equalTo(1000000L)));
+
+		Marker marker3 = result.get(2);
+		assertThat(marker3.getName(), is(equalTo("Marker 3")));
+		assertThat(marker3.getLeftMillis(), is(equalTo(1300000L)));
+		assertThat(marker3.getRightMillis(), is(equalTo(1400000L)));
 
 		Marker marker4 = result.get(3);
 		assertThat(marker4.getName(), is(equalTo("Marker 4")));
