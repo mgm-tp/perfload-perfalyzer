@@ -53,7 +53,7 @@ formats {
 	}
 	measuringExecutions {
 		pattern = ~/\[measuring\]\[executions\].*/
-		unitX = 'axis.label.timeMillis'
+		unitX = 'axis.label.timeSeconds'
 		unitY = ['axis.label.medianExecutionTimeMillis']
 	}
 	measuringExecutionsPerMinute {
