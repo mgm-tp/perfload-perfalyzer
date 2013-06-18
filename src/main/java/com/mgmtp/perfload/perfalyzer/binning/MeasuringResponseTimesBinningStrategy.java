@@ -20,7 +20,6 @@ import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.google.common.collect.Lists.newArrayListWithExpectedSize;
 import static com.google.common.collect.Maps.newHashMap;
-import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 import static com.google.common.collect.Maps.newTreeMap;
 import static com.google.common.collect.Sets.newHashSet;
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
@@ -64,7 +63,7 @@ import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
  */
 public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrategy {
 
-	private final Map<String, UriMeasurings> measuringsMap = newHashMapWithExpectedSize(5); // the URI is the key
+	private final Map<String, UriMeasurings> measuringsMap = newTreeMap();
 	private final Map<String, ExecutionMeasurings> perExecutionResponseTimes = newHashMap();
 	private final Set<String> errorExecutions = newHashSet();
 
@@ -87,15 +86,17 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 			String result = tokens[MEASURING_NORMALIZED_COL_RESULT];
 			String executionId = tokens[MEASURING_NORMALIZED_COL_EXECUTION_ID];
 
-			UriMeasurings measurings = measuringsMap.get(uriAlias);
+			String key = type + "||" + uriAlias;
+			UriMeasurings measurings = measuringsMap.get(key);
 			if (measurings == null) {
 				measurings = new UriMeasurings();
 				measurings.type = type;
-				measuringsMap.put(uriAlias, measurings);
+				measurings.uriAlias = uriAlias;
+				measuringsMap.put(key, measurings);
 			}
 
-			// response time distribution is calculated by grouping by response time
 			if (responseTime > 0) {
+				// response time distribution is calculated by grouping by response time
 				// only positive values allowed on logarithmic axis
 				// response time might by -1 in case of an error
 				MutableInt mutableInt = measurings.responseDistributions.get(responseTime);
@@ -104,10 +105,10 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 					measurings.responseDistributions.put(responseTime, mutableInt);
 				}
 				mutableInt.increment();
-
-				// collect all response times for a URI, so quantiles can be calculated later
-				measurings.responseTimes.add(responseTime.doubleValue());
 			}
+
+			// collect all response times for a URI, so quantiles can be calculated later
+			measurings.responseTimes.add(responseTime.doubleValue());
 
 			if ("ERROR".equals(result)) {
 				measurings.errorCount.increment();
@@ -142,8 +143,8 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 
 		int i = 0;
 		for (Entry<String, UriMeasurings> entry : measuringsMap.entrySet()) {
-			String uri = entry.getKey();
 			UriMeasurings measurings = entry.getValue();
+			String uri = measurings.uriAlias;
 			if (measurings.responseTimes.isEmpty()) {
 				continue;
 			}
@@ -260,10 +261,11 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 	 * Container for measurings for a specified URI
 	 */
 	static class UriMeasurings {
+		String type;
+		public String uriAlias;
 		Map<Long, MutableInt> responseDistributions = newTreeMap(); // tree map for sorting
 		List<Double> responseTimes = newArrayListWithCapacity(5000); // Double needed for quantile computation
 		MutableInt errorCount = new MutableInt();
-		String type;
 	}
 
 	static class ExecutionMeasurings implements Comparable<ExecutionMeasurings> {

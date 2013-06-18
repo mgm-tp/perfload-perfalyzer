@@ -63,7 +63,7 @@ public class MeasuringAggregatedRequestsBinningStrategy extends AbstractBinningS
 
 			long timestampMillis = Long.parseLong(tokens[0]);
 
-			if (!"AGENT".equals(MEASURING_NORMALIZED_COL_REQUEST_TYPE)) {
+			if (!"AGENT".equals(tokens[MEASURING_NORMALIZED_COL_REQUEST_TYPE])) {
 				requestCounter++;
 				binSecondManager.addTimestamp(timestampMillis);
 				binMinuteManager.addTimestamp(timestampMillis);
