@@ -162,16 +162,15 @@ public class GcLogReportPreparationStrategy extends AbstractReportPreparationStr
 		appendEscapedAndQuoted(sb, DELIMITER, formatGcValue(model.getPermAllocatedSizes()));
 		appendEscapedAndQuoted(sb, DELIMITER, memoryFormat.format(model.getFreedMemory()));
 		appendEscapedAndQuoted(sb, DELIMITER, memoryFormat.format(model.getFreedMemory() / model.getRunningTime() * 60.0));
-		appendEscapedAndQuoted(sb, DELIMITER, model.hasCorrectTimestamp() ? intNumberFormat.format(model.getPause().getSum())
-				+ " s" : "n/a");
-		appendEscapedAndQuoted(
-				sb,
-				DELIMITER,
-				model.getFullGCPause().getN() > 0
-						? intNumberFormat.format(model.getFullGCPause().getMin()) + " s / "
-								+ intNumberFormat.format(model.getFullGCPause().getMax()) + " s"
-						: "n/a");
-		appendEscapedAndQuoted(sb, DELIMITER, model.hasCorrectTimestamp() ? intNumberFormat.format(model.getThroughput()) + " %"
+		appendEscapedAndQuoted(sb, DELIMITER, model.hasCorrectTimestamp()
+				? floatNumberFormat.format(model.getPause().getSum()) + " s"
+				: "n/a");
+		appendEscapedAndQuoted(sb, DELIMITER, model.getFullGCPause().getN() > 0
+				? intNumberFormat.format(model.getFullGCPause().getMin()) + " s / "
+						+ intNumberFormat.format(model.getFullGCPause().getMax()) + " s"
+				: "n/a");
+		appendEscapedAndQuoted(sb, DELIMITER, model.hasCorrectTimestamp()
+				? floatNumberFormat.format(model.getThroughput()) + " %"
 				: "n/a");
 		appendEscapedAndQuoted(sb, DELIMITER, formatGcValue(model.getFullGCPause()));
 		appendEscapedAndQuoted(sb, DELIMITER, model.getFullGCPause().getN() > 0

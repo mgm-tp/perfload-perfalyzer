@@ -15,64 +15,42 @@
  */
 package com.mgmtp.perfload.perfalyzer.util;
 
-import java.text.DecimalFormat;
-import java.text.FieldPosition;
 import java.text.NumberFormat;
-import java.text.ParsePosition;
 import java.util.Locale;
+
+import javax.inject.Inject;
 
 /**
  * 
  * @author rnaegele
  */
-public class MemoryFormat extends DecimalFormat {
+public class MemoryFormat {
 
 	private static final long ONE_KB = 1024L;
 	private static final long TEN_KB = ONE_KB * 10L;
 	private static final long ONE_MB = 1024L * ONE_KB;
 	private static final long TEN_MB = ONE_MB * 10L;
+	private static final long ONE_GB = 1024L * ONE_MB;
+	private static final long TEN_GB = ONE_GB * 10L;
 
 	private final NumberFormat format;
 
-	public MemoryFormat(final Locale locale) {
+	@Inject
+	MemoryFormat(final Locale locale) {
 		format = NumberFormat.getNumberInstance(locale);
-		format.setMaximumFractionDigits(1);
+		format.setMaximumFractionDigits(2);
 	}
 
-	@Override
-	public StringBuffer format(final double memInK, final StringBuffer toAppendTo, final FieldPosition pos) {
+	public String format(final double memInK) {
 		final double bytes = memInK * ONE_KB;
-		if (bytes >= TEN_MB) {
-			format.format(bytes / ONE_MB, toAppendTo, pos);
-			toAppendTo.append(" MiB");
+		if (bytes >= TEN_GB) {
+			return format.format(bytes / ONE_GB) + " GiB";
+		} else if (bytes >= TEN_MB) {
+			return format.format(bytes / ONE_MB) + " MiB";
 		} else if (bytes >= TEN_KB) {
-			format.format(bytes / ONE_KB, toAppendTo, pos);
-			toAppendTo.append(" KiB");
+			return format.format(bytes / ONE_KB) + " KiB";
 		} else {
-			format.format(bytes, toAppendTo, pos);
-			toAppendTo.append(" B");
+			return format.format(bytes) + " B";
 		}
-		return toAppendTo;
-	}
-
-	@Override
-	public StringBuffer format(final long memInK, final StringBuffer toAppendTo, final FieldPosition pos) {
-		final double bytes = memInK * ONE_KB;
-		if (bytes >= TEN_MB) {
-			format.format(bytes / ONE_MB, toAppendTo, pos);
-			toAppendTo.append(" MiB");
-		} else if (bytes >= TEN_KB) {
-			format.format(bytes / ONE_KB, toAppendTo, pos);
-			toAppendTo.append(" KiB");
-		} else {
-			format.format(bytes, toAppendTo, pos);
-			toAppendTo.append(" B");
-		}
-		return toAppendTo;
-	}
-
-	@Override
-	public Number parse(final String source, final ParsePosition parsePosition) {
-		throw new UnsupportedOperationException("class does not support parsing");
 	}
 }

@@ -87,10 +87,10 @@ import com.mgmtp.perfload.perfalyzer.util.Marker;
 import com.mgmtp.perfload.perfalyzer.util.MarkersReader;
 import com.mgmtp.perfload.perfalyzer.util.MemoryFormat;
 import com.mgmtp.perfload.perfalyzer.util.ResourceBundleProvider;
+import com.mgmtp.perfload.perfalyzer.util.ResourceBundleProvider.Utf8Control;
 import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
 import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
 import com.mgmtp.perfload.perfalyzer.util.Unzipper;
-import com.mgmtp.perfload.perfalyzer.util.ResourceBundleProvider.Utf8Control;
 import com.mgmtp.perfload.perfalyzer.workflow.GcLogWorkflow;
 import com.mgmtp.perfload.perfalyzer.workflow.MeasuringWorkflow;
 import com.mgmtp.perfload.perfalyzer.workflow.PerfMonWorkflow;
@@ -170,6 +170,7 @@ public class PerfAlyzerModule extends AbstractModule {
 		bind(ReportCreator.class);
 		bind(ResourceBundle.class).toProvider(ResourceBundleProvider.class);
 		bind(PlotCreator.class);
+		bind(MemoryFormat.class);
 	}
 
 	private void bindTestMetadata(final File unzippedDir) {
@@ -311,11 +312,6 @@ public class PerfAlyzerModule extends AbstractModule {
 		NumberFormat nf = new DecimalFormat("0.00", dfs);
 		nf.setRoundingMode(RoundingMode.HALF_UP);
 		return nf;
-	}
-
-	@Provides
-	MemoryFormat provideMemoryFormat(final Locale locale) {
-		return new MemoryFormat(locale);
 	}
 
 	@Provides
