@@ -109,7 +109,6 @@ public class PerfAlyzerModule extends AbstractModule {
 
 	public PerfAlyzerModule(final PerfAlyzerArgs args) {
 		checkState(args.inputDir.isDirectory(), "'inputDir' does not exist or is not a directory: %s", args.inputDir);
-		checkState(args.outputDir.isDirectory(), "'outputBaseDir' does not exist or is not a directory: %s", args.outputDir);
 		this.args = args;
 	}
 
@@ -128,6 +127,7 @@ public class PerfAlyzerModule extends AbstractModule {
 		String timestamp = matcher.group(1);
 		String testName = matcher.group(2);
 		File destDir = new File(new File(args.outputDir, testName), timestamp);
+
 		File unzippedDir = new File(destDir, "01_unzipped");
 
 		bind(File.class).annotatedWith(RelativeDestDir.class).toInstance(new File(testName, timestamp));
