@@ -50,7 +50,7 @@
 			<filtered>true</filtered>
 		</file>
 		<file>
-			<source>${project.basedir}/distribution/perfalyzer.sh</source>
+			<source>${project.basedir}/distribution/perfalyzer</source>
 			<outputDirectory>/</outputDirectory>
 			<fileMode>755</fileMode>
 			<lineEnding>unix</lineEnding>
