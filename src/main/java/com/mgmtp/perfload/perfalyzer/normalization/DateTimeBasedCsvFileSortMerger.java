@@ -15,7 +15,6 @@
  */
 package com.mgmtp.perfload.perfalyzer.normalization;
 
-import static com.google.common.base.Joiner.on;
 import static com.google.common.io.Closeables.closeQuietly;
 import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
 
@@ -75,9 +74,6 @@ public class DateTimeBasedCsvFileSortMerger {
 		PriorityQueue<LineCachingFileProcessor> pq =
 				new PriorityQueue<LineCachingFileProcessor>(11, new QueueComparator(delimiter, sortCriteriaColumn));
 
-		StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
-		tokenizer.setDelimiterChar(delimiter);
-
 		for (File file : sourceFiles) {
 			LineCachingFileProcessor lcfp = new LineCachingFileProcessor(file);
 			lcfp.open();
@@ -90,11 +86,8 @@ public class DateTimeBasedCsvFileSortMerger {
 			FileChannel writeChannel = fis.getChannel();
 			while (pq.size() > 0) {
 				LineCachingFileProcessor lcfp = pq.poll();
-				String r = lcfp.readAndCacheNextLine();
-				tokenizer.reset(r);
-
-				String join = on(delimiter).join(tokenizer.getTokenArray());
-				writeLineToChannel(writeChannel, join, Charset.forName("UTF-8"));
+				String line = lcfp.readAndCacheNextLine();
+				writeLineToChannel(writeChannel, line, Charset.forName("UTF-8"));
 
 				if (lcfp.isEmpty()) {
 					closeQuietly(lcfp);
