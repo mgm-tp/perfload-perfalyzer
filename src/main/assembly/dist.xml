@@ -33,7 +33,7 @@
 			</includes>
 		</fileSet>
 		<fileSet>
-			<directory>${project.basedir}/distribution</directory>
+			<directory>${basedir}/distribution</directory>
 			<outputDirectory>/</outputDirectory>
 			<excludes>
 				<exclude>perfalyzer.*</exclude>
@@ -44,16 +44,16 @@
 	</fileSets>
 	<files>
 		<file>
-			<source>${project.basedir}/distribution/perfalyzer.cmd</source>
+			<source>${basedir}/distribution/perfalyzer.cmd</source>
 			<outputDirectory>/</outputDirectory>
-			<lineEnding>windows</lineEnding>
+			<lineEnding>crlf</lineEnding>
 			<filtered>true</filtered>
 		</file>
 		<file>
-			<source>${project.basedir}/distribution/perfalyzer</source>
+			<source>${basedir}/distribution/perfalyzer</source>
 			<outputDirectory>/</outputDirectory>
-			<fileMode>755</fileMode>
-			<lineEnding>unix</lineEnding>
+			<fileMode>775</fileMode>
+			<lineEnding>lf</lineEnding>
 			<filtered>true</filtered>
 		</file>
 	</files>
