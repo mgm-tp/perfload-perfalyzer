@@ -17,7 +17,7 @@ package com.mgmtp.perfload.perfalyzer.workflow;
 
 import static com.google.common.collect.FluentIterable.from;
 import static com.google.common.collect.Lists.newArrayList;
-import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.fileNameContains;
+import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.fileNameEquals;
 import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.perfAlyzerFileNameContains;
 
 import java.io.File;
@@ -58,8 +58,8 @@ public class PerfMonWorkflow extends AbstractWorkflow {
 	@Inject
 	public PerfMonWorkflow(final Charset charset, final TimestampNormalizer timestampNormalizer, final List<Marker> markers,
 			final @IntFormat Provider<NumberFormat> intNumberFormatProvider,
-			final @IntFormat Provider<NumberFormat> numberFormatProvider1, final List<DisplayData> displayDataList, 
-			final ResourceBundle resourceBundle, final PlotCreator plotCreator,	final TestMetadata testMetadata) {
+			final @IntFormat Provider<NumberFormat> numberFormatProvider1, final List<DisplayData> displayDataList,
+			final ResourceBundle resourceBundle, final PlotCreator plotCreator, final TestMetadata testMetadata) {
 		super(charset, timestampNormalizer, markers, intNumberFormatProvider, numberFormatProvider1, displayDataList,
 				resourceBundle, testMetadata, plotCreator);
 	}
@@ -68,7 +68,7 @@ public class PerfMonWorkflow extends AbstractWorkflow {
 	public List<Runnable> getNormalizationTasks(final File inputDir, final List<File> inputFiles, final File outputDir) {
 		List<Runnable> tasks = newArrayList();
 
-		for (final File file : from(inputFiles).filter(fileNameContains("perfmon"))) {
+		for (final File file : from(inputFiles).filter(fileNameEquals("perfmon.out"))) {
 			Runnable task = new Runnable() {
 				@Override
 				public void run() {
@@ -123,7 +123,7 @@ public class PerfMonWorkflow extends AbstractWorkflow {
 
 				try {
 					ReportPreparationStrategy strategy = new PerfMonReportPreparationStrategy(charset,
-							intNumberFormatProvider.get(), floatNumberFormatProvider.get(), displayDataList, resourceBundle, 
+							intNumberFormatProvider.get(), floatNumberFormatProvider.get(), displayDataList, resourceBundle,
 							plotCreator, testMetadata);
 					final ReporterPreparator reporter = new ReporterPreparator(inputDir, outputDir, strategy);
 					reporter.processFiles(from(inputFiles).filter(perfAlyzerFileNameContains("perfmon")).toImmutableList());

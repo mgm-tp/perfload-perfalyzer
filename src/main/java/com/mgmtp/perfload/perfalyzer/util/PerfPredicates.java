@@ -30,6 +30,10 @@ public class PerfPredicates {
 		return new ParentFileNamePredicate(fileName);
 	}
 
+	public static Predicate<File> fileNameEquals(final String s) {
+		return new FileNameEqualsPredicate(s);
+	}
+
 	public static Predicate<File> fileNameContains(final String s) {
 		return new FileNameContainsPredicate(s);
 	}
@@ -60,6 +64,19 @@ public class PerfPredicates {
 		@Override
 		public boolean apply(final File input) {
 			return input.getParentFile().getName().equals(fileName);
+		}
+	}
+
+	private static class FileNameEqualsPredicate implements Predicate<File> {
+		private final String s;
+
+		public FileNameEqualsPredicate(final String s) {
+			this.s = s;
+		}
+
+		@Override
+		public boolean apply(final File input) {
+			return input.getName().equals(s);
 		}
 	}
 
