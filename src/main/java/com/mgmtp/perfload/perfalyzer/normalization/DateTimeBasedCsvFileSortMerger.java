@@ -71,8 +71,7 @@ public class DateTimeBasedCsvFileSortMerger {
 	public void mergeFiles() throws IOException {
 		Files.createParentDirs(destFile);
 
-		PriorityQueue<LineCachingFileProcessor> pq =
-				new PriorityQueue<LineCachingFileProcessor>(11, new QueueComparator(delimiter, sortCriteriaColumn));
+		PriorityQueue<LineCachingFileProcessor> pq = new PriorityQueue<>(11, new QueueComparator(delimiter, sortCriteriaColumn));
 
 		for (File file : sourceFiles) {
 			LineCachingFileProcessor lcfp = new LineCachingFileProcessor(file);
@@ -80,9 +79,7 @@ public class DateTimeBasedCsvFileSortMerger {
 			pq.add(lcfp);
 		}
 
-		FileOutputStream fis = null;
-		try {
-			fis = new FileOutputStream(destFile);
+		try (final FileOutputStream fis = new FileOutputStream(destFile)) {
 			FileChannel writeChannel = fis.getChannel();
 			while (pq.size() > 0) {
 				LineCachingFileProcessor lcfp = pq.poll();
@@ -99,7 +96,6 @@ public class DateTimeBasedCsvFileSortMerger {
 			for (LineCachingFileProcessor lcfp : pq) {
 				closeQuietly(lcfp);
 			}
-			closeQuietly(fis);
 		}
 	}
 
