@@ -30,6 +30,7 @@ import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASUR
 import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 import org.apache.commons.lang3.text.StrBuilder;
@@ -46,6 +47,7 @@ import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
  * Normalizing implementation for measuring logs.
  * 
  * @author ctchinda
+ * @author rnaegele
  */
 public class MeasuringNormalizingStrategy implements NormalizingStrategy {
 
@@ -93,13 +95,19 @@ public class MeasuringNormalizingStrategy implements NormalizingStrategy {
 		String uriString = tokens[MEASURING_RAW_COL_URI];
 		String uriAlias = tokens[MEASURING_RAW_COL_URI_ALIAS];
 
-		URI uri = URI.create(uriString);
-
-		String uriPath = uri.getPath();
-		String query = uri.getQuery();
-		if (query != null) {
-			uriPath += '?' + query;
+		String uriPath;
+		try {
+			URI uri = new URI(uriString);
+			uriPath = uri.getPath();
+			String query = uri.getQuery();
+			if (query != null) {
+				uriPath += '?' + query;
+			}
+		} catch (URISyntaxException ex) {
+			// this can happen for agent measurings and custom request types
+			uriPath = uriString;
 		}
+
 		if (uriString.equals(uriAlias)) {
 			uriAlias = uriPath;
 		}
