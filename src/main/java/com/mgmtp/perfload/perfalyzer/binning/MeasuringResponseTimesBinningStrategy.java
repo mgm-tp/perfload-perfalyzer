@@ -194,7 +194,7 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 			Collections.sort(values);
 
 			for (ExecutionMeasurings execMeasurings : values) {
-				medianExecutionBinManager.addBinValue(execMeasurings.sumResponseTimes.doubleValue());
+				medianExecutionBinManager.addBinValue(execMeasurings.sumResponseTimes.doubleValue() / 1000);
 
 				long timestampMillis = execMeasurings.timestampMillis;
 				executionsPerMinuteBinManager.addTimestamp(timestampMillis);
@@ -215,9 +215,9 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 					}));
 
 			StrBuilder sb = new StrBuilder(150);
-			appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(Doubles.min(sumResponseTimes)));
-			appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(StatUtils.percentile(sumResponseTimes, 50d)));
-			appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(Doubles.max(sumResponseTimes)));
+			appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(Doubles.min(sumResponseTimes) / 1000));
+			appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(StatUtils.percentile(sumResponseTimes, 50d) / 1000));
+			appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(Doubles.max(sumResponseTimes) / 1000));
 			writeLineToChannel(channelManager.getChannel("aggregatedResponseTimes"), sb.toString(), charset);
 		}
 	}
