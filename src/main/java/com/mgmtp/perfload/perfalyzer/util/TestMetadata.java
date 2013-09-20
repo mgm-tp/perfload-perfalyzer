@@ -17,9 +17,7 @@ package com.mgmtp.perfload.perfalyzer.util;
 
 import static com.google.common.base.Splitter.on;
 import static com.google.common.collect.Sets.newTreeSet;
-import static org.apache.commons.io.FilenameUtils.wildcardMatch;
 
-import java.util.Enumeration;
 import java.util.Properties;
 import java.util.Set;
 
@@ -27,7 +25,6 @@ import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 /**
@@ -61,13 +58,8 @@ public class TestMetadata {
 		DateTime end = new DateTime(properties.getProperty("test.finish"));
 		String duration = DurationFormatUtils.formatDurationHMS(new Duration(new DateTime(start), new DateTime(end)).getMillis());
 
-		Set<String> operations = newTreeSet();
-		for (Enumeration<?> en = properties.propertyNames(); en.hasMoreElements();) {
-			String name = (String) en.nextElement();
-			if (wildcardMatch(name, "testplan.*.operations")) {
-				operations.addAll(ImmutableList.copyOf(on(',').split(properties.getProperty(name))));
-			}
-		}
+		String operationsString = properties.getProperty("operations");
+		Set<String> operations = newTreeSet(on(',').split(operationsString));
 		return new TestMetadata(start, end, duration, properties.getProperty("test.file"), rawResultsDir,
 				properties.getProperty("perfload.implementation.version"), properties.getProperty("test.comment"), operations);
 	}
