@@ -16,14 +16,11 @@
 package com.mgmtp.perfload.perfalyzer;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadIntoProperties;
 import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadProperties;
 import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.saveProperties;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
-import static org.apache.commons.io.FileUtils.listFiles;
-import static org.apache.commons.io.filefilter.FileFilterUtils.suffixFileFilter;
 import groovy.util.ConfigObject;
 import groovy.util.ConfigSlurper;
 
@@ -84,7 +81,6 @@ import com.mgmtp.perfload.perfalyzer.reporting.email.EmailReporter;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.DisplayData;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator;
 import com.mgmtp.perfload.perfalyzer.util.Marker;
-import com.mgmtp.perfload.perfalyzer.util.MarkersReader;
 import com.mgmtp.perfload.perfalyzer.util.MemoryFormat;
 import com.mgmtp.perfload.perfalyzer.util.ResourceBundleProvider;
 import com.mgmtp.perfload.perfalyzer.util.ResourceBundleProvider.Utf8Control;
@@ -331,11 +327,11 @@ public class PerfAlyzerModule extends AbstractModule {
 	@Provides
 	@Singleton
 	List<Marker> provideMarkers(@UnzippedDir final File unzippedDir) throws IOException {
-		log.info("Loading markers from load profile...");
-		File loadProfileFile = getOnlyElement(listFiles(new File(unzippedDir, "console/console-logs"),
-				suffixFileFilter(".perfload"), null));
-		MarkersReader markerReader = new MarkersReader(loadProfileFile);
-		return markerReader.readMarkers();
-		//		return ImmutableList.of();
+		//		log.info("Loading markers from load profile...");
+		//		File loadProfileFile = getOnlyElement(listFiles(new File(unzippedDir, "console/console-logs"),
+		//				suffixFileFilter(".perfload"), null));
+		//		MarkersReader markerReader = new MarkersReader(loadProfileFile);
+		//		return markerReader.readMarkers();
+		return ImmutableList.of();
 	}
 }
