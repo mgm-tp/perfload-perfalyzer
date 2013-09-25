@@ -46,7 +46,6 @@ import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
 import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
 import com.tagtraum.perf.gcviewer.imp.DataReader;
 import com.tagtraum.perf.gcviewer.imp.DataReaderFactory;
-import com.tagtraum.perf.gcviewer.math.DoubleData;
 import com.tagtraum.perf.gcviewer.math.IntData;
 import com.tagtraum.perf.gcviewer.model.GCEvent;
 import com.tagtraum.perf.gcviewer.model.GCModel;
@@ -172,7 +171,9 @@ public class GcLogReportPreparationStrategy extends AbstractReportPreparationStr
 		appendEscapedAndQuoted(sb, DELIMITER, model.hasCorrectTimestamp()
 				? floatNumberFormat.format(model.getThroughput()) + " %"
 				: "n/a");
-		appendEscapedAndQuoted(sb, DELIMITER, formatGcValue(model.getFullGCPause()));
+		appendEscapedAndQuoted(sb, DELIMITER, model.getFullGCPause().getN() > 0
+				? intNumberFormat.format(model.getFullGCPause().getN())
+				: "n/a");
 		appendEscapedAndQuoted(sb, DELIMITER, model.getFullGCPause().getN() > 0
 				? memoryFormat.format(model.getFreedMemoryByFullGC().getSum() / model.getFullGCPause().getSum()) + "/s"
 				: "n/a");
@@ -183,10 +184,6 @@ public class GcLogReportPreparationStrategy extends AbstractReportPreparationStr
 	}
 
 	private String formatGcValue(final IntData data) {
-		return data.getN() > 0 ? memoryFormat.format(data.getMax()) : "n/a";
-	}
-
-	private String formatGcValue(final DoubleData data) {
 		return data.getN() > 0 ? memoryFormat.format(data.getMax()) : "n/a";
 	}
 }
