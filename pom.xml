@@ -195,6 +195,12 @@
 			<groupId>org.jfree</groupId>
 			<artifactId>jfreechart</artifactId>
 			<version>1.0.14</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>itext</artifactId>
+					<groupId>com.lowagie</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>com.googlecode.jatl</groupId>
