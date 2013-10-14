@@ -86,7 +86,7 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 			@Override
 			public void run() {
 				Set<File> fileSet = from(inputFiles).filter(fileNameContains("measuring")).transform(makeAbsolute(inputDir))
-						.toImmutableSet();
+						.toSet();
 				final File sortMergeOutputDir = createTempDir();
 				File mergedMeasuringLog = new File("global/measuring-logs/measuring.csv");
 				try {
@@ -243,10 +243,10 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 					log.info("Preparing report data...");
 
 					ReportPreparationStrategy strategy = new MeasuringReportPreparationStrategy(charset,
-							intNumberFormatProvider.get(), floatNumberFormatProvider.get(), displayDataList, resourceBundle, 
+							intNumberFormatProvider.get(), floatNumberFormatProvider.get(), displayDataList, resourceBundle,
 							plotCreator, testMetadata, maxHistoryItems);
 					final ReporterPreparator reporter = new ReporterPreparator(inputDir, outputDir, strategy);
-					reporter.processFiles(from(inputFiles).filter(perfAlyzerFileNameContains("measuring")).toImmutableList());
+					reporter.processFiles(from(inputFiles).filter(perfAlyzerFileNameContains("measuring")).toList());
 				} catch (Exception ex) {
 					throw new PerfAlyzerException("Error creating measuring report files", ex);
 				}

@@ -126,7 +126,7 @@ public class PerfMonWorkflow extends AbstractWorkflow {
 							intNumberFormatProvider.get(), floatNumberFormatProvider.get(), displayDataList, resourceBundle,
 							plotCreator, testMetadata);
 					final ReporterPreparator reporter = new ReporterPreparator(inputDir, outputDir, strategy);
-					reporter.processFiles(from(inputFiles).filter(perfAlyzerFileNameContains("perfmon")).toImmutableList());
+					reporter.processFiles(from(inputFiles).filter(perfAlyzerFileNameContains("perfmon")).toList());
 				} catch (IOException ex) {
 					throw new PerfAlyzerException("Error creating perfMon report files", ex);
 				} catch (ParseException ex) {

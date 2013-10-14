@@ -67,7 +67,7 @@ public class RequestFilesMerger {
 
 		Predicate<PerfAlyzerFile> predicateOr = or(predicate1, predicate2);
 
-		Set<PerfAlyzerFile> paFiles = from(listPerfAlyzerFiles).filter(predicateOr).toImmutableSet();
+		Set<PerfAlyzerFile> paFiles = from(listPerfAlyzerFiles).filter(predicateOr).toSet();
 		ListMultimap<String, PerfAlyzerFile> byOperationMultimap = ArrayListMultimap.create();
 
 		for (PerfAlyzerFile paf : paFiles) {

@@ -146,10 +146,10 @@ public class GcLogWorkflow extends AbstractWorkflow {
 
 				try {
 					GcLogReportPreparationStrategy strategy = new GcLogReportPreparationStrategy(charset,
-							intNumberFormatProvider.get(), floatNumberFormatProvider.get(), displayDataList, resourceBundle, 
-							plotCreator, testMetadata, timestampNormalizer,	memoryFormatProvider.get());
+							intNumberFormatProvider.get(), floatNumberFormatProvider.get(), displayDataList, resourceBundle,
+							plotCreator, testMetadata, timestampNormalizer, memoryFormatProvider.get());
 					final ReporterPreparator reporter = new ReporterPreparator(inputDir, outputDir, strategy);
-					reporter.processFiles(from(inputFiles).filter(perfAlyzerFileNameContains("[gclog]")).toImmutableList());
+					reporter.processFiles(from(inputFiles).filter(perfAlyzerFileNameContains("[gclog]")).toList());
 				} catch (IOException ex) {
 					throw new PerfAlyzerException("Error creating perfMon report files", ex);
 				} catch (ParseException ex) {
