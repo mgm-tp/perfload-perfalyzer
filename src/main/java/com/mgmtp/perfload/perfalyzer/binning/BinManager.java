@@ -64,18 +64,13 @@ public abstract class BinManager {
 			binCounter = new MutableLong();
 
 			// determine index of the bin before the first bin that has data
-			binIndex = (int) timestampMillis / binSize;
+			int lastInitialEmptyBinIndex = (int) timestampMillis / binSize;
 
 			binningStarted();
 
-			// always write initial zero
-			binCompleted(0, 0L);
-
-			if (binIndex > 0) {
-				// always additionally write zero for the first bin with data (this increments the bin index)
-				// and restore the old index
+			// create empty bins at the beginning if necessary
+			for (int i = 0; i < lastInitialEmptyBinIndex; ++i) {
 				binCompleted(computeBin(), 0L);
-				binIndex--;
 			}
 
 			// align with bin size
@@ -108,11 +103,6 @@ public abstract class BinManager {
 		if (binCounter != null && binCounter.getValue() > 0) {
 			binCompleted(computeBin(), binCounter.getValue());
 		}
-
-		// always write zero at the end
-		// decrement to bin index again to get the last x-value again
-		binIndex--;
-		binCompleted(computeBin(), 0L);
 	}
 
 	private int computeBin() {
