@@ -48,6 +48,7 @@ import org.jfree.chart.plot.Plot;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.chart.renderer.xy.XYStepRenderer;
 import org.jfree.chart.title.LegendTitle;
 
 import com.mgmtp.perfload.perfalyzer.annotations.IntFormat;
@@ -59,6 +60,7 @@ import com.mgmtp.perfload.perfalyzer.annotations.IntFormat;
 public class PlotCreator {
 
 	private static final StandardChartTheme CHART_THEME = new StandardChartTheme("JFree");
+
 	static {
 		CHART_THEME.setDrawingSupplier(new PerfAlyzerDrawingSupplier());
 	}
@@ -69,6 +71,12 @@ public class PlotCreator {
 	}
 
 	public static enum RendererType {
+		STEPS {
+			@Override
+			XYItemRenderer createRenderer() {
+				return new XYStepRenderer();
+			}
+		},
 		LINES {
 			@Override
 			XYItemRenderer createRenderer() {
@@ -199,7 +207,7 @@ public class PlotCreator {
 
 		public PerfAlyzerDrawingSupplier() {
 			super(DEFAULT_PAINT_SEQUENCE, DEFAULT_FILL_PAINT_SEQUENCE, DEFAULT_OUTLINE_PAINT_SEQUENCE,
-					new Stroke[] { new BasicStroke(1.75f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_BEVEL) },
+					new Stroke[] { new BasicStroke(1.5f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_BEVEL) },
 					DEFAULT_OUTLINE_STROKE_SEQUENCE, createStandardSeriesShapes());
 		}
 
