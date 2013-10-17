@@ -64,7 +64,13 @@ public class PerfMonNormalizingStrategy implements NormalizingStrategy {
 		List<String> tokenList = tokenizer.getTokenList();
 
 		List<ChannelData> result = newArrayListWithExpectedSize(3);
-		DateTime timestamp = new DateTime(tokenList.get(0));
+		DateTime timestamp = null;
+		try {
+			timestamp = new DateTime(tokenList.get(0));
+		} catch (IllegalArgumentException ex) {
+			log.error("Invalid data line: {}", line);
+			return result;
+		}
 
 		if (!timestampNormalizer.isInRange(timestamp)) {
 			log.trace("Skipping perfMon entry. Timestamp not in time range of test: " + timestamp);

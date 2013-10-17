@@ -71,13 +71,18 @@ public class MeasuringNormalizingStrategy implements NormalizingStrategy {
 		String[] tokens = tokenizer.getTokenArray();
 
 		List<ChannelData> channelDataList = newArrayListWithExpectedSize(3);
-		DateTime timestamp = new DateTime(tokens[3]);
+		DateTime timestamp = null;
+		try {
+			timestamp = new DateTime(tokens[3]);
+		} catch (IllegalArgumentException ex) {
+			log.error("Invalid data line: {}", line);
+			return channelDataList;
+		}
 
 		if (!timestampNormalizer.isInRange(timestamp)) {
 			log.trace("Skipping measuring entry. Timestamp not in time range of test: " + timestamp);
 			return channelDataList;
 		}
-
 		StrBuilder sb = new StrBuilder(200);
 
 		long normalizedTimestamp = timestampNormalizer.normalizeTimestamp(timestamp, 0L);
