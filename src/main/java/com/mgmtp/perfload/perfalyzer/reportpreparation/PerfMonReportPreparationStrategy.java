@@ -197,14 +197,14 @@ public class PerfMonReportPreparationStrategy extends AbstractReportPreparationS
 				globalDataSet.addSeries(host + ":" + type, dataList);
 			}
 
-			plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES, ChartDimensions.DEFAULT,
+			plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.STEPS, ChartDimensions.DEFAULT,
 					dataSet);
 		}
 
 		for (Entry<String, NumberDataSet> entry : globalDataSets.entrySet()) {
 			NumberDataSet dataSet = entry.getValue();
 			File destFile = new File(destDir, "global" + SystemUtils.FILE_SEPARATOR + entry.getKey());
-			plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES, ChartDimensions.DEFAULT,
+			plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.STEPS, ChartDimensions.DEFAULT,
 					dataSet);
 		}
 	}

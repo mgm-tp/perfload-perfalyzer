@@ -18,7 +18,6 @@ package com.mgmtp.perfload.perfalyzer.reportpreparation;
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 import static com.google.common.collect.Sets.newHashSet;
-import static com.google.common.io.Closeables.closeQuietly;
 import static com.google.common.io.Files.createParentDirs;
 import static com.google.common.io.Files.newReader;
 import static com.google.common.io.Files.readLines;
@@ -264,7 +263,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 				sb.append(".png");
 
 				File destFile = new File(destDir, sb.toString());
-				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES,
+				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.STEPS,
 						ChartDimensions.WIDE, entry.getValue());
 			}
 		}
@@ -329,7 +328,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 				sb.append(".png");
 
 				File destFile = new File(destDir, sb.toString());
-				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES,
+				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.STEPS,
 						ChartDimensions.WIDE, entry.getValue());
 			}
 		}
@@ -387,18 +386,14 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 
 					File destFile = createDestFile(destDir, "global", f.getMarker(), null);
 
-					FileOutputStream fosOverall = null;
-					try {
-						fosOverall = new FileOutputStream(destFile, true);
+					try (FileOutputStream fosOverall = new FileOutputStream(destFile, true)) {
 						FileChannel overallChannel = fosOverall.getChannel();
 
 						StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
 						tokenizer.setDelimiterChar(DELIMITER);
 
-						Reader r = null;
 						File globalComparisonFile = null;
-						try {
-							r = newReader(new File(sourceDir, f.getFile().getPath()), charset);
+						try (Reader r = newReader(new File(sourceDir, f.getFile().getPath()), charset)) {
 							createParentDirs(destFile);
 
 							String operation = f.getFileNameParts().get(1);
@@ -410,8 +405,8 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 
 							StrBuilder sb = new StrBuilder(50);
 							appendEscapedAndQuoted(sb, DELIMITER, "time", "numRequests", "numErrors", "minReqPerSec",
-									"medianReqPerSec", "maxReqPerSec", "minReqPerMin", "medianReqPerMin", "maxReqPerMin", 
-									"minExecutionTime",	"medianExecutionTime", "maxExecutionTime");
+									"medianReqPerSec", "maxReqPerSec", "minReqPerMin", "medianReqPerMin", "maxReqPerMin",
+									"minExecutionTime", "medianExecutionTime", "maxExecutionTime");
 							String comparisonHeader = sb.toString();
 
 							if (!globalComparisonFile.exists()) {
@@ -468,16 +463,12 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 									writeLines(globalComparisonFile, charset.name(), comparisonLines);
 								}
 							}
-						} finally {
-							closeQuietly(r);
 						}
 
 						File comparisonFile = new File(destDir, "comparison" + SystemUtils.FILE_SEPARATOR
 								+ globalComparisonFile.getName());
 						// copy global file to this test's result files
 						copyFile(globalComparisonFile, comparisonFile);
-					} finally {
-						closeQuietly(fosOverall);
 					}
 				}
 			}
@@ -543,7 +534,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 				sb.append(".png");
 
 				File destFile = new File(destDir, sb.toString());
-				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES, ChartDimensions.WIDE,
+				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.STEPS, ChartDimensions.WIDE,
 						entry.getValue());
 			}
 		}
@@ -606,7 +597,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 				sb.append(".png");
 
 				File destFile = new File(destDir, sb.toString());
-				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES,
+				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.STEPS,
 						ChartDimensions.DEFAULT, entry.getValue());
 			}
 
@@ -622,16 +613,12 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 				sb.append(".csv");
 
 				File destFile = new File(destDir, sb.toString());
-				FileOutputStream fos = null;
-				try {
-					fos = new FileOutputStream(destFile);
+				try (FileOutputStream fos = new FileOutputStream(destFile)) {
 					FileChannel channel = fos.getChannel();
 
 					boolean needsHeader = true;
 					for (PerfAlyzerFile paf : errorsByTypeByMarkerMultimap.get(key)) {
-						BufferedReader br = null;
-						try {
-							br = Files.newReader(new File(sourceDir, paf.getFile().getPath()), charset);
+						try (BufferedReader br = Files.newReader(new File(sourceDir, paf.getFile().getPath()), charset)) {
 
 							String header = br.readLine();
 							if (needsHeader) {
@@ -643,12 +630,8 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 							for (String line = null; (line = br.readLine()) != null;) {
 								writeLineToChannel(channel, "\"" + operation + "\"" + DELIMITER + line, charset);
 							}
-						} finally {
-							closeQuietly(br);
 						}
 					}
-				} finally {
-					closeQuietly(fos);
 				}
 			}
 		}
