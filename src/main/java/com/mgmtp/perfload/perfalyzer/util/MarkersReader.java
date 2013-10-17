@@ -17,7 +17,6 @@ package com.mgmtp.perfload.perfalyzer.util;
 
 import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
-import static org.apache.commons.io.IOUtils.closeQuietly;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -56,9 +55,7 @@ public class MarkersReader {
 		StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
 		tokenizer.setDelimiterChar(DELIMITER);
 
-		FileInputStream fis = null;
-		try {
-			fis = new FileInputStream(inputFile);
+		try (FileInputStream fis = new FileInputStream(inputFile)) {
 
 			for (Scanner scanner = new Scanner(fis.getChannel()); scanner.hasNext();) {
 				String line = scanner.nextLine();
@@ -89,8 +86,6 @@ public class MarkersReader {
 			}
 
 			return ImmutableList.copyOf(markers.values());
-		} finally {
-			closeQuietly(fis);
 		}
 	}
 }

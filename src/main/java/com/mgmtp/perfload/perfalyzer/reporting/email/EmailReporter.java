@@ -17,7 +17,6 @@ package com.mgmtp.perfload.perfalyzer.reporting.email;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Maps.newTreeMap;
-import static com.google.common.io.Closeables.closeQuietly;
 import static com.google.common.io.Files.newReader;
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
 import static java.lang.Math.min;
@@ -176,10 +175,7 @@ public class EmailReporter {
 	}
 
 	private List<? extends List<String>> loadData(final File file) throws IOException {
-		BufferedReader br = null;
-		try {
-			br = newReader(file, charset);
-
+		try (BufferedReader br = newReader(file, charset)) {
 			List<List<String>> rows = newArrayList();
 			StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
 			tokenizer.setDelimiterChar(DELIMITER);
@@ -191,8 +187,6 @@ public class EmailReporter {
 			}
 
 			return rows;
-		} finally {
-			closeQuietly(br);
 		}
 	}
 }

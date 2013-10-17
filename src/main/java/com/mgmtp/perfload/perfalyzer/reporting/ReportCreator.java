@@ -17,7 +17,6 @@ package com.mgmtp.perfload.perfalyzer.reporting;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Maps.newLinkedHashMap;
-import static com.google.common.io.Closeables.closeQuietly;
 import static com.google.common.io.Files.newReader;
 import static com.google.common.io.Files.newWriter;
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
@@ -29,7 +28,6 @@ import static org.apache.commons.lang3.StringUtils.split;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.charset.Charset;
@@ -188,21 +186,14 @@ public class ReportCreator {
 		writeReport(html);
 	}
 
-	private void writeReport(final HtmlSkeleton html) throws FileNotFoundException {
-		Writer wr = null;
-		try {
-			wr = newWriter(new File(destDir, "report.html"), charset);
+	private void writeReport(final HtmlSkeleton html) throws IOException {
+		try (Writer wr = newWriter(new File(destDir, "report.html"), charset)) {
 			html.write(wr);
-		} finally {
-			closeQuietly(wr);
 		}
 	}
 
 	private TableData createTableData(final File file) throws IOException {
-		BufferedReader br = null;
-		try {
-			br = newReader(new File(soureDir, file.getPath()), charset);
-
+		try (BufferedReader br = newReader(new File(soureDir, file.getPath()), charset)) {
 			List<String> headers = null;
 			List<List<String>> rows = newArrayList();
 			int valueColumnsCount = 0;
@@ -235,8 +226,6 @@ public class ReportCreator {
 			boolean imageInNewRow = fileName.contains("[distribution]") || fileName.contains("[executions]")
 					|| fileName.contains("[gclog]");
 			return new TableData(headers, rows, valueColumnsCount, imageInNewRow);
-		} finally {
-			closeQuietly(br);
 		}
 	}
 

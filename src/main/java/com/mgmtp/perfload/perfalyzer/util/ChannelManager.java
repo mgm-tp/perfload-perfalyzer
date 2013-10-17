@@ -16,7 +16,7 @@
 package com.mgmtp.perfload.perfalyzer.util;
 
 import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
-import static com.google.common.io.Closeables.closeQuietly;
+import static org.apache.commons.io.IOUtils.closeQuietly;
 
 import java.io.Closeable;
 import java.io.File;

@@ -17,7 +17,7 @@ package com.mgmtp.perfload.perfalyzer.util;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Maps.newHashMap;
-import static com.google.common.io.Closeables.closeQuietly;
+import static org.apache.commons.io.IOUtils.closeQuietly;
 
 import java.io.File;
 import java.io.FileInputStream;

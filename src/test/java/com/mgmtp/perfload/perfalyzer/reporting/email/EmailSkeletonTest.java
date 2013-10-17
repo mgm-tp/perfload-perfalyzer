@@ -15,7 +15,6 @@
  */
 package com.mgmtp.perfload.perfalyzer.reporting.email;
 
-import static com.google.common.io.Closeables.closeQuietly;
 import static com.google.common.io.Files.newWriter;
 import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadProperties;
 
@@ -69,14 +68,11 @@ public class EmailSkeletonTest {
 
 		EmailSkeleton email = new EmailSkeleton(testMetadata, bundle, locale, data, comparisonData, "http://link.to/report.html");
 
-		Writer wr = null;
-		try {
-			File file = new File("target/tmp", "email.html");
-			Files.createParentDirs(file);
-			wr = newWriter(file, Charsets.UTF_8);
+		File file = new File("target/tmp", "email.html");
+		Files.createParentDirs(file);
+
+		try (Writer wr = newWriter(file, Charsets.UTF_8)) {
 			email.write(wr);
-		} finally {
-			closeQuietly(wr);
 		}
 	}
 }

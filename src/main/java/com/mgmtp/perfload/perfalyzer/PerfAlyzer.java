@@ -81,7 +81,7 @@ public class PerfAlyzer {
 			@NormalizedDir final File normalizedDir, @ReportPreparationDir final File reportPreparationDir,
 			@ReportDir final File reportDir, @DoNormalization final boolean doNormalization,
 			@DoBinning final boolean doBinning, @DoReportPreparation final boolean doReportPreparation,
-			final WorkflowExecutor workflowExecutor, final ReportCreator reportCreator, 
+			final WorkflowExecutor workflowExecutor, final ReportCreator reportCreator,
 			@Nullable final EmailReporter emailReporter) {
 
 		this.unzippedDir = unzippedDir;
@@ -179,9 +179,7 @@ public class PerfAlyzer {
 	public static void main(final String[] args) {
 		JCommander jCmd = null;
 		try {
-			Stopwatch stopwatch = new Stopwatch();
-			stopwatch.start();
-
+			Stopwatch stopwatch = Stopwatch.createStarted();
 			LOG.info("Starting perfAlyzer...");
 
 			PerfAlyzerArgs perfAlyzerArgs = new PerfAlyzerArgs();

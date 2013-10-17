@@ -15,8 +15,6 @@
  */
 package com.mgmtp.perfload.perfalyzer.util;
 
-import static com.google.common.io.Closeables.closeQuietly;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -36,36 +34,24 @@ public class PropertiesUtils {
 	}
 
 	public static Properties loadIntoProperties(final File propertiesFile, final Properties props) throws IOException {
-		Reader br = null;
-		try {
-			br = Files.newReader(propertiesFile, Charsets.UTF_8);
+		try (Reader br = Files.newReader(propertiesFile, Charsets.UTF_8)) {
 			props.load(br);
 			return props;
-		} finally {
-			closeQuietly(br);
 		}
 	}
 
 	public static Properties loadProperties(final File propertiesFile) throws IOException {
-		Reader br = null;
-		try {
-			br = Files.newReader(propertiesFile, Charsets.UTF_8);
+		try (Reader br = Files.newReader(propertiesFile, Charsets.UTF_8)) {
 			Properties props = new Properties();
 			props.load(br);
 			return props;
-		} finally {
-			closeQuietly(br);
 		}
 	}
 
 	public static Properties saveProperties(final File propertiesFile, final Properties props) throws IOException {
-		Writer w = null;
-		try {
-			w = Files.newWriter(propertiesFile, Charsets.UTF_8);
+		try (Writer w = Files.newWriter(propertiesFile, Charsets.UTF_8)) {
 			props.store(w, "perfAlyzer properties");
 			return props;
-		} finally {
-			closeQuietly(w);
 		}
 	}
 }

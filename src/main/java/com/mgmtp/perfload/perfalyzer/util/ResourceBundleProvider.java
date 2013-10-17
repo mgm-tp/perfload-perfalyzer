@@ -17,7 +17,6 @@ package com.mgmtp.perfload.perfalyzer.util;
 
 import static com.google.common.io.Files.newReader;
 import static org.apache.commons.io.FilenameUtils.wildcardMatch;
-import static org.apache.commons.io.IOUtils.closeQuietly;
 
 import java.io.File;
 import java.io.IOException;
@@ -80,10 +79,8 @@ public class ResourceBundleProvider implements Provider<ResourceBundle> {
 			String bundleName = toBundleName(baseName, locale);
 			String resourceName = toResourceName(bundleName, FORMAT_UTF8);
 
-			Reader r = null;
-			try {
-				// must use a reader, so UTF-8 can be used in properties files
-				r = newReader(new File(resourceDir, resourceName), Charsets.UTF_8);
+			// must use a reader, so UTF-8 can be used in properties files
+			try (Reader r = newReader(new File(resourceDir, resourceName), Charsets.UTF_8)) {
 				return new PropertyResourceBundle(r) {
 					@Override
 					public Object handleGetObject(final String key) {
@@ -102,8 +99,6 @@ public class ResourceBundleProvider implements Provider<ResourceBundle> {
 						return object;
 					}
 				};
-			} finally {
-				closeQuietly(r);
 			}
 		}
 

@@ -17,7 +17,6 @@ package com.mgmtp.perfload.perfalyzer.util;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.get;
-import static com.google.common.io.Closeables.closeQuietly;
 import static org.apache.commons.io.FileUtils.copyFile;
 import static org.apache.commons.io.FilenameUtils.normalize;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
@@ -115,14 +114,9 @@ public class IoUtilities {
 
 		if (sourceFiles.size() > 1) {
 			// append all other files skipping headers
-			Writer w = null;
-			try {
-				w = Files.newWriterSupplier(destFile, charset, true).getOutput();
-
+			try (Writer w = Files.newWriterSupplier(destFile, charset, true).getOutput()) {
 				for (PerfAlyzerFile paf : sourceFiles.subList(1, sourceFiles.size())) {
-					BufferedReader br = null;
-					try {
-						br = Files.newReader(new File(sourceDir, paf.getFile().getPath()), charset);
+					try (BufferedReader br = Files.newReader(new File(sourceDir, paf.getFile().getPath()), charset)) {
 
 						// skip headers
 						for (int i = 0; i < headerLines; ++i) {
@@ -131,12 +125,8 @@ public class IoUtilities {
 
 						// copy the rest
 						CharStreams.copy(br, w);
-					} finally {
-						closeQuietly(br);
 					}
 				}
-			} finally {
-				closeQuietly(w);
 			}
 		}
 	}
@@ -168,15 +158,8 @@ public class IoUtilities {
 		} else {
 			new File(file.getParent()).mkdirs();
 
-			InputStream is = null;
-			FileOutputStream os = null;
-			try {
-				is = zf.getInputStream(entry);
-				os = new FileOutputStream(file);
+			try (InputStream is = zf.getInputStream(entry); FileOutputStream os = new FileOutputStream(file)) {
 				copy(Channels.newChannel(is), os.getChannel());
-			} finally {
-				closeQuietly(os);
-				closeQuietly(is);
 			}
 			// preserve modification time; must be set after the stream is closed
 			file.setLastModified(entry.getTime());
@@ -218,10 +201,7 @@ public class IoUtilities {
 	 *            the charset
 	 */
 	public static String readLastLine(final File file, final Charset charset) throws IOException {
-		RandomAccessFile raf = null;
-
-		try {
-			raf = new RandomAccessFile(file, "r");
+		try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
 			long length = raf.length() - 1;
 
 			ByteArrayOutputStream baos = new ByteArrayOutputStream(80);
@@ -253,8 +233,6 @@ public class IoUtilities {
 
 			// turn into string respecting the charset
 			return new String(bytes, charset);
-		} finally {
-			closeQuietly(raf);
 		}
 	}
 

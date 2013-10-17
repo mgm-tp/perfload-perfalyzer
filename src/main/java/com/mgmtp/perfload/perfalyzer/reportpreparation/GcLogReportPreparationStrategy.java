@@ -16,7 +16,6 @@
 package com.mgmtp.perfload.perfalyzer.reportpreparation;
 
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
-import static com.google.common.io.Closeables.closeQuietly;
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
 import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
 import static org.apache.commons.io.FileUtils.writeLines;
@@ -73,17 +72,13 @@ public class GcLogReportPreparationStrategy extends AbstractReportPreparationStr
 		for (PerfAlyzerFile f : files) {
 			log.info("Processing file '{}'...", f);
 
-			InputStream is = null;
 			GCModel origModel = null;
-			try {
-				is = new FileInputStream(new File(sourceDir, f.getFile().getPath()));
+			try (InputStream is = new FileInputStream(new File(sourceDir, f.getFile().getPath()))) {
 				DataReader dataReader = new DataReaderFactory().getDataReader(is);
 				origModel = dataReader.read();
 			} catch (IOException ex) {
 				log.error("Error reading GC log file: " + f.getFile(), ex);
 				continue;
-			} finally {
-				closeQuietly(is);
 			}
 
 			GCModel model = new GCModel(origModel.isCountTenuredAsFull());
@@ -125,8 +120,7 @@ public class GcLogReportPreparationStrategy extends AbstractReportPreparationStr
 				}
 
 				plotCreator.writePlotFile(new File(destDir, f.copy().setExtension("png").getFile().getPath()), AxisType.LINEAR,
-						AxisType.LINEAR,
-						RendererType.LINES, ChartDimensions.WIDE, dataSetHeap, dataSetGcTimes);
+						AxisType.LINEAR, RendererType.LINES, ChartDimensions.WIDE, dataSetHeap, dataSetGcTimes);
 
 				List<CharSequence> gcLines = newArrayListWithCapacity(2);
 				writeHeader(gcLines);
