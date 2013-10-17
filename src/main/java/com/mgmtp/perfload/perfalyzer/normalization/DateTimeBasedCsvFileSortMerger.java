@@ -15,7 +15,6 @@
  */
 package com.mgmtp.perfload.perfalyzer.normalization;
 
-import static com.google.common.io.Closeables.closeQuietly;
 import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
 
 import java.io.File;
@@ -74,9 +73,11 @@ public class DateTimeBasedCsvFileSortMerger {
 		PriorityQueue<LineCachingFileProcessor> pq = new PriorityQueue<>(11, new QueueComparator(delimiter, sortCriteriaColumn));
 
 		for (File file : sourceFiles) {
-			LineCachingFileProcessor lcfp = new LineCachingFileProcessor(file);
-			lcfp.open();
-			pq.add(lcfp);
+			if (file.length() > 0) {
+				LineCachingFileProcessor lcfp = new LineCachingFileProcessor(file);
+				lcfp.open();
+				pq.add(lcfp);
+			}
 		}
 
 		try (final FileOutputStream fis = new FileOutputStream(destFile)) {
@@ -87,14 +88,14 @@ public class DateTimeBasedCsvFileSortMerger {
 				writeLineToChannel(writeChannel, line, Charset.forName("UTF-8"));
 
 				if (lcfp.isEmpty()) {
-					closeQuietly(lcfp);
+					lcfp.close();
 				} else {
 					pq.add(lcfp);
 				}
 			}
 		} finally {
 			for (LineCachingFileProcessor lcfp : pq) {
-				closeQuietly(lcfp);
+				lcfp.close();
 			}
 		}
 	}
@@ -112,10 +113,12 @@ public class DateTimeBasedCsvFileSortMerger {
 		@Override
 		public int compare(final LineCachingFileProcessor lineCache1, final LineCachingFileProcessor lineCache2) {
 			tokenizer.reset(lineCache1.getCachedLine());
-			DateTime dtFirst = new DateTime(tokenizer.getTokenArray()[sortCriteriaColumn]);
+			String[] tokens = tokenizer.getTokenArray();
+			DateTime dtFirst = new DateTime(tokens[sortCriteriaColumn]);
 
 			tokenizer.reset(lineCache2.getCachedLine());
-			DateTime dtSecond = new DateTime(tokenizer.getTokenArray()[sortCriteriaColumn]);
+			tokens = tokenizer.getTokenArray();
+			DateTime dtSecond = new DateTime(tokens[sortCriteriaColumn]);
 
 			return dtFirst.compareTo(dtSecond);
 		}
