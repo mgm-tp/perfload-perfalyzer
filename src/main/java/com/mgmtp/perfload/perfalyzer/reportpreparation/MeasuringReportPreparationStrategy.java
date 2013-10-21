@@ -263,7 +263,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 				sb.append(".png");
 
 				File destFile = new File(destDir, sb.toString());
-				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.STEPS,
+				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES,
 						ChartDimensions.WIDE, entry.getValue());
 			}
 		}
@@ -328,7 +328,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 				sb.append(".png");
 
 				File destFile = new File(destDir, sb.toString());
-				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.STEPS,
+				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES,
 						ChartDimensions.WIDE, entry.getValue());
 			}
 		}
@@ -534,7 +534,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 				sb.append(".png");
 
 				File destFile = new File(destDir, sb.toString());
-				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.STEPS, ChartDimensions.WIDE,
+				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES, ChartDimensions.WIDE,
 						entry.getValue());
 			}
 		}
@@ -597,7 +597,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 				sb.append(".png");
 
 				File destFile = new File(destDir, sb.toString());
-				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.STEPS,
+				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES,
 						ChartDimensions.DEFAULT, entry.getValue());
 			}
 

@@ -48,7 +48,6 @@ import org.jfree.chart.plot.Plot;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.chart.renderer.xy.XYStepRenderer;
 import org.jfree.chart.title.LegendTitle;
 
 import com.mgmtp.perfload.perfalyzer.annotations.IntFormat;
@@ -71,12 +70,6 @@ public class PlotCreator {
 	}
 
 	public static enum RendererType {
-		STEPS {
-			@Override
-			XYItemRenderer createRenderer() {
-				return new XYStepRenderer();
-			}
-		},
 		LINES {
 			@Override
 			XYItemRenderer createRenderer() {

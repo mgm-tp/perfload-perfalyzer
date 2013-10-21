@@ -15,10 +15,13 @@
  */
 package com.mgmtp.perfload.perfalyzer.util;
 
+import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Lists.newArrayListWithExpectedSize;
 import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
+import static com.google.common.io.Files.newReader;
 import static com.google.common.io.Files.readLines;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -106,32 +109,44 @@ public class PerfAlyzerUtils {
 			throws IOException {
 		final StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
 		tokenizer.setDelimiterChar(';');
-		return readLines(file, charset, new LineProcessor<List<SeriesPoint>>() {
-			private boolean headerLine = true;
-			private final List<SeriesPoint> result = newArrayListWithExpectedSize(200);
 
-			@Override
-			public boolean processLine(final String line) throws IOException {
+		try (BufferedReader br = newReader(file, charset)) {
+			boolean headerLine = true;
+			List<SeriesPoint> result = newArrayListWithExpectedSize(200);
+
+			for (String line = null; (line = br.readLine()) != null;) {
 				try {
 					if (headerLine) {
 						headerLine = false;
 					} else {
 						tokenizer.reset(line);
 						String[] tokens = tokenizer.getTokenArray();
-						result.add(new SeriesPoint(numberFormat.parse(tokens[0]).doubleValue(), numberFormat.parse(tokens[1])
-								.doubleValue()));
+						double x = numberFormat.parse(tokens[0]).doubleValue();
+						double y = numberFormat.parse(tokens[1]).doubleValue();
+
+						if (!result.isEmpty()) {
+							// additional point for histogram
+							SeriesPoint previousPoint = getLast(result);
+							result.add(new SeriesPoint(x, previousPoint.getY()));
+						}
+						tokenizer.reset(line);
+						result.add(new SeriesPoint(x, y));
 					}
-					return true;
 				} catch (ParseException ex) {
 					throw new IOException("Error parsing number in file: " + file, ex);
 				}
 			}
 
-			@Override
-			public List<SeriesPoint> getResult() {
-				return ImmutableList.copyOf(result);
+			int size = result.size();
+			if (size > 2) {
+				// additional point at end for histogram
+				SeriesPoint nextToLast = result.get(size - 3);
+				SeriesPoint last = result.get(size - 1);
+				double dX = last.getX().doubleValue() - nextToLast.getX().doubleValue();
+				result.add(new SeriesPoint(last.getX().doubleValue() + dX, last.getY()));
 			}
-		});
+			return ImmutableList.copyOf(result);
+		}
 	}
 
 	/**
