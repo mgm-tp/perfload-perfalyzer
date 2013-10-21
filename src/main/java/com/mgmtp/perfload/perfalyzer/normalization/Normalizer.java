@@ -30,7 +30,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -40,6 +39,7 @@ import org.apache.commons.lang3.text.StrBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Charsets;
 import com.mgmtp.perfload.perfalyzer.util.ChannelData;
 
 /**
@@ -52,7 +52,6 @@ public class Normalizer {
 
 	private final File sourceDir;
 	private final File destDir;
-	private final Charset charset;
 	private final NormalizingStrategy normalizingStrategy;
 
 	/**
@@ -60,16 +59,12 @@ public class Normalizer {
 	 *            the source directory where normalized files are located
 	 * @param destDir
 	 *            the destination directory
-	 * @param charset
-	 *            the character set for file IO
 	 * @param normalizingStrategy
 	 *            the strategy that contains the normalizing logic
 	 */
-	public Normalizer(final File sourceDir, final File destDir, final Charset charset,
-			final NormalizingStrategy normalizingStrategy) {
+	public Normalizer(final File sourceDir, final File destDir, final NormalizingStrategy normalizingStrategy) {
 		this.sourceDir = sourceDir;
 		this.destDir = destDir;
-		this.charset = charset;
 		this.normalizingStrategy = normalizingStrategy;
 	}
 
@@ -94,7 +89,7 @@ public class Normalizer {
 		FileInputStream fis = null;
 		try {
 			fis = new FileInputStream(new File(sourceDir, filePath)); //relative to source dir
-			for (Scanner scanner = new Scanner(fis.getChannel(), charset.name()); scanner.hasNext();) {
+			for (Scanner scanner = new Scanner(fis.getChannel(), Charsets.UTF_8.name()); scanner.hasNext();) {
 				String line = scanner.nextLine();
 				List<ChannelData> channelDataList = normalizingStrategy.normalizeLine(file.getName(), line);
 				for (ChannelData channelData : channelDataList) {
@@ -113,7 +108,7 @@ public class Normalizer {
 						channels.put(channelData.getChannelKey(), channel);
 					}
 
-					writeLineToChannel(channel, channelData.getValue(), charset);
+					writeLineToChannel(channel, channelData.getValue(), Charsets.UTF_8);
 				}
 			}
 		} catch (NormalizationException ex) {

@@ -24,7 +24,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Date;
@@ -35,6 +34,7 @@ import java.util.ResourceBundle;
 import org.apache.commons.lang3.text.StrBuilder;
 import org.joda.time.DateTime;
 
+import com.google.common.base.Charsets;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.NumberDataSet.SeriesPoint;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator.AxisType;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator.ChartDimensions;
@@ -57,11 +57,11 @@ public class GcLogReportPreparationStrategy extends AbstractReportPreparationStr
 	private final TimestampNormalizer timestampNormalizer;
 	private final MemoryFormat memoryFormat;
 
-	public GcLogReportPreparationStrategy(final Charset charset, final NumberFormat intNumberFormat,
+	public GcLogReportPreparationStrategy(final NumberFormat intNumberFormat,
 			final NumberFormat floatNumberFormat, final List<DisplayData> displayDataList,
 			final ResourceBundle resourceBundle, final PlotCreator plotCreator, final TestMetadata testMetadata,
 			final TimestampNormalizer timestampNormalizer, final MemoryFormat memoryFormat) {
-		super(charset, intNumberFormat, floatNumberFormat, displayDataList, resourceBundle, plotCreator, testMetadata);
+		super(intNumberFormat, floatNumberFormat, displayDataList, resourceBundle, plotCreator, testMetadata);
 		this.timestampNormalizer = timestampNormalizer;
 		this.memoryFormat = memoryFormat;
 	}
@@ -125,7 +125,7 @@ public class GcLogReportPreparationStrategy extends AbstractReportPreparationStr
 				List<CharSequence> gcLines = newArrayListWithCapacity(2);
 				writeHeader(gcLines);
 				writeData(model, gcLines);
-				writeLines(new File(destDir, f.copy().setExtension("csv").getFile().getPath()), charset.name(), gcLines);
+				writeLines(new File(destDir, f.copy().setExtension("csv").getFile().getPath()), Charsets.UTF_8.name(), gcLines);
 			}
 		}
 	}

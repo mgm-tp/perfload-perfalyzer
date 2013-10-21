@@ -29,7 +29,6 @@ import static org.apache.commons.lang3.StringUtils.split;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Collections;
@@ -42,6 +41,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.text.StrBuilder;
 import org.apache.commons.lang3.text.StrTokenizer;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.ListMultimap;
@@ -57,10 +57,10 @@ import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
  */
 public class PerfMonReportPreparationStrategy extends AbstractReportPreparationStrategy {
 
-	public PerfMonReportPreparationStrategy(final Charset charset, final NumberFormat intNumberFormat,
+	public PerfMonReportPreparationStrategy(final NumberFormat intNumberFormat,
 			final NumberFormat floatNumberFormat, final List<DisplayData> displayDataList,
 			final ResourceBundle resourceBundle, final PlotCreator plotCreator, final TestMetadata testMetadata) {
-		super(charset, intNumberFormat, floatNumberFormat, displayDataList, resourceBundle, plotCreator, testMetadata);
+		super(intNumberFormat, floatNumberFormat, displayDataList, resourceBundle, plotCreator, testMetadata);
 	}
 
 	@Override
@@ -99,7 +99,7 @@ public class PerfMonReportPreparationStrategy extends AbstractReportPreparationS
 		createPlots(sourceDir, destDir, byTypeAndHostMultimap);
 	}
 
-	private void createCsvFiles(final File sourceDir, final File destDir, 
+	private void createCsvFiles(final File sourceDir, final File destDir,
 			final ListMultimap<String, PerfAlyzerFile> byTypeAndHostMultimap)
 			throws IOException {
 
@@ -121,7 +121,7 @@ public class PerfMonReportPreparationStrategy extends AbstractReportPreparationS
 				String type = f.getFileNameParts().get(1);
 
 				// aggregated files always have two lines, a header and a data line
-				List<String> lines = readLines(new File(sourceDir, f.getFile().getPath()), charset);
+				List<String> lines = readLines(new File(sourceDir, f.getFile().getPath()), Charsets.UTF_8);
 				if (lines.size() < 2) {
 					// needs at least header and one content line
 					continue;
@@ -154,7 +154,7 @@ public class PerfMonReportPreparationStrategy extends AbstractReportPreparationS
 			// exclude header line from sorting
 			Collections.sort(contentList.subList(1, contentList.size()));
 
-			writeLines(destFile, charset.name(), contentList);
+			writeLines(destFile, Charsets.UTF_8.name(), contentList);
 		}
 
 		for (String key : globalContentListMultimap.keySet()) {
@@ -163,7 +163,7 @@ public class PerfMonReportPreparationStrategy extends AbstractReportPreparationS
 			// exclude header line from sorting
 			Collections.sort(globalContentList.subList(1, globalContentList.size()));
 
-			writeLines(new File(destDir, "global" + SystemUtils.FILE_SEPARATOR + key), charset.name(), globalContentList);
+			writeLines(new File(destDir, "global" + SystemUtils.FILE_SEPARATOR + key), Charsets.UTF_8.name(), globalContentList);
 		}
 	}
 
@@ -185,7 +185,8 @@ public class PerfMonReportPreparationStrategy extends AbstractReportPreparationS
 
 			for (PerfAlyzerFile f : filesByType) {
 				String type = f.getFileNameParts().get(1);
-				List<SeriesPoint> dataList = readDataFile(new File(sourceDir, f.getFile().getPath()), charset, intNumberFormat);
+				List<SeriesPoint> dataList = readDataFile(new File(sourceDir, f.getFile().getPath()), Charsets.UTF_8,
+						intNumberFormat);
 				dataSet.addSeries(type, dataList);
 
 				NumberDataSet globalDataSet = globalDataSets.get(keyWithoutHost);

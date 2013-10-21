@@ -17,14 +17,13 @@ package com.mgmtp.perfload.perfalyzer.binning;
 
 import static com.google.common.collect.Maps.newHashMap;
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_RESULT;
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_ERROR_MSG;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_RESULT;
 import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
 import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
-import java.nio.charset.Charset;
 import java.text.NumberFormat;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -33,6 +32,7 @@ import java.util.Scanner;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.text.StrBuilder;
 
+import com.google.common.base.Charsets;
 import com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants;
 import com.mgmtp.perfload.perfalyzer.util.ChannelManager;
 import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
@@ -44,15 +44,15 @@ public class ErrorCountBinningStragegy extends AbstractBinningStrategy {
 
 	private final Map<String, MutableInt> errorsByType = newHashMap();
 
-	public ErrorCountBinningStragegy(final Charset charset, final NumberFormat intNumberFormat,
+	public ErrorCountBinningStragegy(final NumberFormat intNumberFormat,
 			final NumberFormat floatNumberFormat) {
-		super(charset, intNumberFormat, floatNumberFormat);
+		super(intNumberFormat, floatNumberFormat);
 	}
 
 	@Override
 	public void binData(final Scanner scanner, final WritableByteChannel destChannel) throws IOException {
 		BinManager binManager = new ChannelBinManager(PerfAlyzerConstants.BIN_SIZE_MILLIS_30_SECONDS, destChannel, "seconds",
-				"count", charset, intNumberFormat);
+				"count", intNumberFormat);
 
 		while (scanner.hasNextLine()) {
 			tokenizer.reset(scanner.nextLine());
@@ -88,13 +88,13 @@ public class ErrorCountBinningStragegy extends AbstractBinningStrategy {
 
 		StrBuilder sb = new StrBuilder();
 		appendEscapedAndQuoted(sb, DELIMITER, "error", "count");
-		writeLineToChannel(channel, sb.toString(), charset);
+		writeLineToChannel(channel, sb.toString(), Charsets.UTF_8);
 
 		for (Entry<String, MutableInt> entry : errorsByType.entrySet()) {
 			sb = new StrBuilder(300);
 			appendEscapedAndQuoted(sb, DELIMITER, entry.getKey());
 			appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(entry.getValue().getValue()));
-			writeLineToChannel(channel, sb.toString(), charset);
+			writeLineToChannel(channel, sb.toString(), Charsets.UTF_8);
 		}
 	}
 

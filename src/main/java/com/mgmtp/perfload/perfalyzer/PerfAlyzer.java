@@ -21,7 +21,6 @@ import static org.apache.commons.io.FileUtils.deleteDirectory;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.concurrent.ExecutorService;
 
 import javax.annotation.Nullable;
@@ -33,7 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
-import com.google.common.base.Charsets;
 import com.google.common.base.Stopwatch;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -57,8 +55,6 @@ import com.mgmtp.perfload.perfalyzer.workflow.WorkflowExecutor;
  */
 @Singleton
 public class PerfAlyzer {
-
-	public static final Charset charset = Charsets.UTF_8;
 
 	private final static Logger LOG = LoggerFactory.getLogger(PerfAlyzer.class);
 

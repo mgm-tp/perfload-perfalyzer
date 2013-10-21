@@ -22,7 +22,6 @@ import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.perfAlyzerFileNa
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.List;
@@ -56,11 +55,11 @@ import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
 public class PerfMonWorkflow extends AbstractWorkflow {
 
 	@Inject
-	public PerfMonWorkflow(final Charset charset, final TimestampNormalizer timestampNormalizer, final List<Marker> markers,
+	public PerfMonWorkflow(final TimestampNormalizer timestampNormalizer, final List<Marker> markers,
 			final @IntFormat Provider<NumberFormat> intNumberFormatProvider,
 			final @IntFormat Provider<NumberFormat> numberFormatProvider1, final List<DisplayData> displayDataList,
 			final ResourceBundle resourceBundle, final PlotCreator plotCreator, final TestMetadata testMetadata) {
-		super(charset, timestampNormalizer, markers, intNumberFormatProvider, numberFormatProvider1, displayDataList,
+		super(timestampNormalizer, markers, intNumberFormatProvider, numberFormatProvider1, displayDataList,
 				resourceBundle, testMetadata, plotCreator);
 	}
 
@@ -75,7 +74,7 @@ public class PerfMonWorkflow extends AbstractWorkflow {
 					try {
 						log.info("Normalizing '{}'", file);
 						PerfMonNormalizingStrategy strategy = new PerfMonNormalizingStrategy(timestampNormalizer, markers);
-						final Normalizer normalizer = new Normalizer(inputDir, outputDir, charset, strategy);
+						final Normalizer normalizer = new Normalizer(inputDir, outputDir, strategy);
 						normalizer.normalize(file);
 					} catch (Exception ex) {
 						throw new PerfAlyzerException("Error normalizing file: " + file, ex);
@@ -98,9 +97,9 @@ public class PerfMonWorkflow extends AbstractWorkflow {
 				public void run() {
 					try {
 						log.info("Binning '{}'", file);
-						PerfMonBinningStrategy strategy = new PerfMonBinningStrategy(charset, intNumberFormatProvider.get(),
+						PerfMonBinningStrategy strategy = new PerfMonBinningStrategy(intNumberFormatProvider.get(),
 								floatNumberFormatProvider.get());
-						final Binner binner = new Binner(inputDir, outputDir, charset, strategy);
+						final Binner binner = new Binner(inputDir, outputDir, strategy);
 						binner.binFile(file);
 					} catch (IOException ex) {
 						throw new PerfAlyzerException("Error normalizing file: " + file, ex);
@@ -122,9 +121,8 @@ public class PerfMonWorkflow extends AbstractWorkflow {
 				log.info("Preparing report data...");
 
 				try {
-					ReportPreparationStrategy strategy = new PerfMonReportPreparationStrategy(charset,
-							intNumberFormatProvider.get(), floatNumberFormatProvider.get(), displayDataList, resourceBundle,
-							plotCreator, testMetadata);
+					ReportPreparationStrategy strategy = new PerfMonReportPreparationStrategy(intNumberFormatProvider.get(),
+							floatNumberFormatProvider.get(), displayDataList, resourceBundle, plotCreator, testMetadata);
 					final ReporterPreparator reporter = new ReporterPreparator(inputDir, outputDir, strategy);
 					reporter.processFiles(from(inputFiles).filter(perfAlyzerFileNameContains("perfmon")).toList());
 				} catch (IOException ex) {

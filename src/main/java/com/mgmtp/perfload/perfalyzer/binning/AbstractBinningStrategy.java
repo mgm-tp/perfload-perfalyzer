@@ -17,7 +17,6 @@ package com.mgmtp.perfload.perfalyzer.binning;
 
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
 
-import java.nio.charset.Charset;
 import java.text.NumberFormat;
 
 import org.apache.commons.lang3.text.StrTokenizer;
@@ -31,14 +30,12 @@ public abstract class AbstractBinningStrategy implements BinningStrategy {
 
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
-	protected final Charset charset;
 	protected final NumberFormat intNumberFormat;
 	protected final NumberFormat floatNumberFormat;
 	protected final StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
 
-	protected AbstractBinningStrategy(final Charset charset, final NumberFormat intNumberFormat,
+	protected AbstractBinningStrategy(final NumberFormat intNumberFormat,
 			final NumberFormat floatNumberFormat) {
-		this.charset = charset;
 		this.intNumberFormat = intNumberFormat;
 		this.floatNumberFormat = floatNumberFormat;
 		tokenizer.setDelimiterChar(DELIMITER);

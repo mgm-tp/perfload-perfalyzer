@@ -154,8 +154,6 @@ public class PerfAlyzerModule extends AbstractModule {
 		createBindingsFromConfigFile(args.outputDir);
 		bindTestMetadata(unzippedDir);
 
-		bind(Charset.class).toInstance(Charsets.UTF_8);
-
 		Multibinder<Workflow> workflowBinder = Multibinder.newSetBinder(binder(), Workflow.class);
 		workflowBinder.addBinding().to(PerfMonWorkflow.class);
 		workflowBinder.addBinding().to(MeasuringWorkflow.class);

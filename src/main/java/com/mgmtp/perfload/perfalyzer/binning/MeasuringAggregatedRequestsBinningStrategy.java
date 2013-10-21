@@ -23,13 +23,13 @@ import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAn
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
-import java.nio.charset.Charset;
 import java.text.NumberFormat;
 import java.util.Scanner;
 
 import org.apache.commons.lang3.text.StrBuilder;
 import org.apache.commons.math3.stat.StatUtils;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.Collections2;
 import com.google.common.primitives.Doubles;
 import com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants;
@@ -44,9 +44,9 @@ import com.mgmtp.perfload.perfalyzer.util.PerfFunctions;
  */
 public class MeasuringAggregatedRequestsBinningStrategy extends AbstractBinningStrategy {
 
-	public MeasuringAggregatedRequestsBinningStrategy(final Charset charset, final NumberFormat intNumberFormat,
+	public MeasuringAggregatedRequestsBinningStrategy(final NumberFormat intNumberFormat,
 			final NumberFormat floatNumberFormat) {
-		super(charset, intNumberFormat, floatNumberFormat);
+		super(intNumberFormat, floatNumberFormat);
 	}
 
 	@Override
@@ -99,7 +99,7 @@ public class MeasuringAggregatedRequestsBinningStrategy extends AbstractBinningS
 		appendEscapedAndQuoted(sb, DELIMITER, "minReqPerMin");
 		appendEscapedAndQuoted(sb, DELIMITER, "medianReqPerMin");
 		appendEscapedAndQuoted(sb, DELIMITER, "maxReqPerMin");
-		writeLineToChannel(destChannel, sb.toString(), charset);
+		writeLineToChannel(destChannel, sb.toString(), Charsets.UTF_8);
 
 		sb = new StrBuilder();
 		appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(requestCounter));
@@ -112,7 +112,7 @@ public class MeasuringAggregatedRequestsBinningStrategy extends AbstractBinningS
 		appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(minRequestsPerMinute));
 		appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(medianRequestsPerMinute));
 		appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(maxRequestsPerMinute));
-		writeLineToChannel(destChannel, sb.toString(), charset);
+		writeLineToChannel(destChannel, sb.toString(), Charsets.UTF_8);
 	}
 
 	@Override

@@ -30,7 +30,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
-import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -74,7 +73,6 @@ public class ReportCreator {
 	private final TestMetadata testMetadata;
 	private final File soureDir;
 	private final File destDir;
-	private final Charset charset;
 	private final Map<String, List<Pattern>> reportContentsConfigMap;
 	private final StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
 	private final ResourceBundle resourceBundle;
@@ -83,12 +81,11 @@ public class ReportCreator {
 
 	@Inject
 	public ReportCreator(final TestMetadata testMetadata, @ReportPreparationDir final File soureDir,
-			@ReportDir final File destDir, final Charset charset, final Map<String, List<Pattern>> reportContentsConfigMap,
+			@ReportDir final File destDir, final Map<String, List<Pattern>> reportContentsConfigMap,
 			final ResourceBundle resourceBundle, final Locale locale) {
 		this.testMetadata = testMetadata;
 		this.soureDir = soureDir;
 		this.destDir = destDir;
-		this.charset = charset;
 		this.reportContentsConfigMap = reportContentsConfigMap;
 		this.resourceBundle = resourceBundle;
 		this.locale = locale;
@@ -187,13 +184,13 @@ public class ReportCreator {
 	}
 
 	private void writeReport(final HtmlSkeleton html) throws IOException {
-		try (Writer wr = newWriter(new File(destDir, "report.html"), charset)) {
+		try (Writer wr = newWriter(new File(destDir, "report.html"), Charsets.UTF_8)) {
 			html.write(wr);
 		}
 	}
 
 	private TableData createTableData(final File file) throws IOException {
-		try (BufferedReader br = newReader(new File(soureDir, file.getPath()), charset)) {
+		try (BufferedReader br = newReader(new File(soureDir, file.getPath()), Charsets.UTF_8)) {
 			List<String> headers = null;
 			List<List<String>> rows = newArrayList();
 			int valueColumnsCount = 0;

@@ -25,13 +25,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
 import org.apache.commons.lang3.text.StrBuilder;
 import org.apache.commons.lang3.text.StrTokenizer;
+
+import com.google.common.base.Charsets;
 
 /**
  * @author ctchinda
@@ -41,14 +42,12 @@ public class BinnedFilesMerger {
 	private final File inputDir;
 	public static final char DELIMITER = '\t';
 	private final File outputDir;
-	private final Charset charset;
 	private final int sortCriteriaColumn;
 	public static final String FILE_TYPE = "measuring";
 
-	public BinnedFilesMerger(final File inputDir, final File outputDir, final Charset charset, final int sortCriteriaColumn) {
+	public BinnedFilesMerger(final File inputDir, final File outputDir, final int sortCriteriaColumn) {
 		this.inputDir = inputDir;
 		this.outputDir = outputDir;
-		this.charset = charset;
 		this.sortCriteriaColumn = sortCriteriaColumn;
 	}
 
@@ -68,7 +67,7 @@ public class BinnedFilesMerger {
 				FileInputStream fis = null;
 				try {
 					fis = new FileInputStream(file);
-					for (Scanner scanner = new Scanner(fis.getChannel(), charset.name()); scanner.hasNext();) {
+					for (Scanner scanner = new Scanner(fis.getChannel(), Charsets.UTF_8.name()); scanner.hasNext();) {
 						String line = scanner.nextLine();
 						tokenizer.reset(line);
 
@@ -82,14 +81,14 @@ public class BinnedFilesMerger {
 							destChannels.put(key, destChannel);
 
 							//Write the Header...... Has to be improved
-							IoUtilities.writeLineToChannel(destChannel, getHeader(), charset);
+							IoUtilities.writeLineToChannel(destChannel, getHeader(), Charsets.UTF_8);
 						}
 
 						StrBuilder outputLine = new StrBuilder();
 						for (String s : tokenList) {
 							StrBuilderUtils.appendEscapedAndQuoted(outputLine, DELIMITER, s);
 						}
-						IoUtilities.writeLineToChannel(destChannel, outputLine.toString(), charset);
+						IoUtilities.writeLineToChannel(destChannel, outputLine.toString(), Charsets.UTF_8);
 					}
 				} finally {
 					closeQuietly(fis);

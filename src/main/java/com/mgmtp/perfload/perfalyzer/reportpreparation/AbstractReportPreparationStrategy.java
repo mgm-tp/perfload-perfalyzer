@@ -15,7 +15,6 @@
  */
 package com.mgmtp.perfload.perfalyzer.reportpreparation;
 
-import java.nio.charset.Charset;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -33,7 +32,6 @@ abstract class AbstractReportPreparationStrategy implements ReportPreparationStr
 
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
-	protected final Charset charset;
 	protected final NumberFormat intNumberFormat;
 	protected final NumberFormat floatNumberFormat;
 	protected final List<DisplayData> displayDataList;
@@ -41,10 +39,9 @@ abstract class AbstractReportPreparationStrategy implements ReportPreparationStr
 	protected final PlotCreator plotCreator;
 	protected final TestMetadata testMetadata;
 
-	protected AbstractReportPreparationStrategy(final Charset charset, final NumberFormat intNumberFormat,
+	protected AbstractReportPreparationStrategy(final NumberFormat intNumberFormat,
 			final NumberFormat floatNumberFormat, final List<DisplayData> displayDataList,
 			final ResourceBundle resourceBundle, final PlotCreator plotCreator, final TestMetadata testMetadata) {
-		this.charset = charset;
 		this.intNumberFormat = intNumberFormat;
 		this.floatNumberFormat = floatNumberFormat;
 		this.plotCreator = plotCreator;

@@ -21,11 +21,11 @@ import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAn
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
-import java.nio.charset.Charset;
 import java.text.NumberFormat;
 
 import org.apache.commons.lang3.text.StrBuilder;
 
+import com.google.common.base.Charsets;
 import com.mgmtp.perfload.perfalyzer.PerfAlyzerException;
 
 /**
@@ -37,7 +37,6 @@ public class ChannelBinManager extends BinManager {
 	protected String header1;
 	protected String header2;
 
-	protected Charset charset;
 	protected NumberFormat numberFormat;
 
 	/**
@@ -49,18 +48,15 @@ public class ChannelBinManager extends BinManager {
 	 *            the name of the first CSV header
 	 * @param header2
 	 *            the name of the second CSV header
-	 * @param charset
-	 *            the charset to use
 	 * @param numberFormat
 	 *            the number format to use
 	 */
 	public ChannelBinManager(final int binSize, final WritableByteChannel destChannel, final String header1,
-			final String header2, final Charset charset, final NumberFormat numberFormat) {
+			final String header2, final NumberFormat numberFormat) {
 		super(binSize);
 		this.destChannel = destChannel;
 		this.header1 = header1;
 		this.header2 = header2;
-		this.charset = charset;
 		this.numberFormat = numberFormat;
 	}
 
@@ -70,7 +66,7 @@ public class ChannelBinManager extends BinManager {
 			StrBuilder sb = new StrBuilder(50);
 			appendEscapedAndQuoted(sb, DELIMITER, header1);
 			appendEscapedAndQuoted(sb, DELIMITER, header2);
-			writeLineToChannel(destChannel, sb.toString(), charset);
+			writeLineToChannel(destChannel, sb.toString(), Charsets.UTF_8);
 		} catch (IOException ex) {
 			throw new PerfAlyzerException(ex.getMessage(), ex);
 		}
@@ -86,7 +82,7 @@ public class ChannelBinManager extends BinManager {
 			StrBuilder sb = new StrBuilder();
 			appendEscapedAndQuoted(sb, DELIMITER, numberFormat.format(bin));
 			appendEscapedAndQuoted(sb, DELIMITER, numberFormat.format(value));
-			writeLineToChannel(destChannel, sb.toString(), charset);
+			writeLineToChannel(destChannel, sb.toString(), Charsets.UTF_8);
 		} catch (IOException ex) {
 			throw new PerfAlyzerException(ex.getMessage(), ex);
 		}

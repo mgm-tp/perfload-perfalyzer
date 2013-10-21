@@ -15,7 +15,6 @@
  */
 package com.mgmtp.perfload.perfalyzer.workflow;
 
-import java.nio.charset.Charset;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -38,7 +37,6 @@ public abstract class AbstractWorkflow implements Workflow {
 
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
-	protected final Charset charset;
 	protected final TimestampNormalizer timestampNormalizer;
 	protected final List<Marker> markers;
 	protected final Provider<NumberFormat> intNumberFormatProvider;
@@ -48,11 +46,10 @@ public abstract class AbstractWorkflow implements Workflow {
 	protected final TestMetadata testMetadata;
 	protected final PlotCreator plotCreator;
 
-	protected AbstractWorkflow(final Charset charset, final TimestampNormalizer timestampNormalizer, final List<Marker> markers,
+	protected AbstractWorkflow(final TimestampNormalizer timestampNormalizer, final List<Marker> markers,
 			final Provider<NumberFormat> intNumberFormatProvider, final Provider<NumberFormat> floatNumberFormatProvider,
 			final List<DisplayData> displayDataList, final ResourceBundle resourceBundle, final TestMetadata testMetadata,
 			final PlotCreator plotCreator) {
-		this.charset = charset;
 		this.timestampNormalizer = timestampNormalizer;
 		this.markers = markers;
 		this.intNumberFormatProvider = intNumberFormatProvider;

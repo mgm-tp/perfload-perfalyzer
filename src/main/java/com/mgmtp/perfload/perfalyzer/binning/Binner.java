@@ -21,9 +21,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.Scanner;
 
+import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 import com.mgmtp.perfload.perfalyzer.util.ChannelManager;
 import com.mgmtp.perfload.perfalyzer.util.FileNamingStrategy;
@@ -38,7 +38,6 @@ public class Binner {
 
 	private final File sourceDir;
 	private final File destDir;
-	private final Charset charset;
 	private final BinningStrategy binningStrategy;
 
 	/**
@@ -46,15 +45,12 @@ public class Binner {
 	 *            the source directory where normalized files are located
 	 * @param destDir
 	 *            the destination directory
-	 * @param charset
-	 *            the character set for file IO
 	 * @param binningStrategy
 	 *            the strategy that contains the binning logic
 	 */
-	public Binner(final File sourceDir, final File destDir, final Charset charset, final BinningStrategy binningStrategy) {
+	public Binner(final File sourceDir, final File destDir, final BinningStrategy binningStrategy) {
 		this.sourceDir = sourceDir;
 		this.destDir = destDir;
-		this.charset = charset;
 		this.binningStrategy = binningStrategy;
 	}
 
@@ -75,7 +71,7 @@ public class Binner {
 		});
 		try {
 			fis = new FileInputStream(new File(sourceDir, file.getFile().getPath()));
-			Scanner scanner = new Scanner(fis.getChannel(), charset.name());
+			Scanner scanner = new Scanner(fis.getChannel(), Charsets.UTF_8.name());
 
 			if (binningStrategy.needsBinning()) {
 

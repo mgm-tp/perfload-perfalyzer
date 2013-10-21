@@ -36,7 +36,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.List;
@@ -49,6 +48,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.text.StrBuilder;
 import org.apache.commons.lang3.text.StrTokenizer;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
@@ -70,11 +70,11 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 
 	private final int maxHistoryItems;
 
-	public MeasuringReportPreparationStrategy(final Charset charset, final NumberFormat intNumberFormat,
+	public MeasuringReportPreparationStrategy(final NumberFormat intNumberFormat,
 			final NumberFormat floatNumberFormat, final List<DisplayData> displayDataList,
 			final ResourceBundle resourceBundle, final PlotCreator plotCreator, final TestMetadata testMetadata,
 			final int maxHistoryItems) {
-		super(charset, intNumberFormat, floatNumberFormat, displayDataList, resourceBundle, plotCreator, testMetadata);
+		super(intNumberFormat, floatNumberFormat, displayDataList, resourceBundle, plotCreator, testMetadata);
 		this.maxHistoryItems = maxHistoryItems;
 	}
 
@@ -193,7 +193,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 				// one file for each request type
 				for (PerfAlyzerFile f : byTypeMultimap.get(key)) {
 					File file = new File(sourceDir, f.getFile().getPath());
-					List<SeriesPoint> dataList = readDataFile(file, charset, intNumberFormat);
+					List<SeriesPoint> dataList = readDataFile(file, Charsets.UTF_8, intNumberFormat);
 
 					// extract three-digit mapping key as series name which is then shown on the chart's legend
 					String mappingKey = substringAfter(f.getFileNameParts().get(2), "_");
@@ -244,7 +244,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 
 					NumberDataSet dataSet = dataSets.get(dsKey);
 					File file = new File(sourceDir, f.getFile().getPath());
-					List<SeriesPoint> dataList = readDataFile(file, charset, intNumberFormat);
+					List<SeriesPoint> dataList = readDataFile(file, Charsets.UTF_8, intNumberFormat);
 					dataSet.addSeries(key, dataList);
 				}
 			}
@@ -309,7 +309,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 
 					NumberDataSet dataSet = dataSets.get(dsKey);
 					File file = new File(sourceDir, f.getFile().getPath());
-					List<SeriesPoint> dataList = readDataFile(file, charset, intNumberFormat);
+					List<SeriesPoint> dataList = readDataFile(file, Charsets.UTF_8, intNumberFormat);
 					dataSet.addSeries(key, dataList);
 				}
 			}
@@ -393,7 +393,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 						tokenizer.setDelimiterChar(DELIMITER);
 
 						File globalComparisonFile = null;
-						try (Reader r = newReader(new File(sourceDir, f.getFile().getPath()), charset)) {
+						try (Reader r = newReader(new File(sourceDir, f.getFile().getPath()), Charsets.UTF_8)) {
 							createParentDirs(destFile);
 
 							String operation = f.getFileNameParts().get(1);
@@ -414,7 +414,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 								comparisonLines = newArrayListWithCapacity(2);
 								comparisonLines.add(comparisonHeader);
 							} else {
-								comparisonLines = readLines(globalComparisonFile, charset);
+								comparisonLines = readLines(globalComparisonFile, Charsets.UTF_8);
 								// Update header in case it has changed
 								comparisonLines.set(0, comparisonHeader);
 
@@ -438,7 +438,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 
 									if (!overallFiles.contains(destFile)) {
 										overallFiles.add(destFile);
-										writeLineToChannel(overallChannel, "\"operation\"" + DELIMITER + line, charset);
+										writeLineToChannel(overallChannel, "\"operation\"" + DELIMITER + line, Charsets.UTF_8);
 									}
 
 								} else {
@@ -448,7 +448,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 
 									StrBuilder sbAggregated = new StrBuilder(line.length() + 10);
 									appendEscapedAndQuoted(sbAggregated, DELIMITER, operation, tokens);
-									writeLineToChannel(overallChannel, sbAggregated.toString(), charset);
+									writeLineToChannel(overallChannel, sbAggregated.toString(), Charsets.UTF_8);
 
 									StrBuilder sbComparison = new StrBuilder(line.length() + 10);
 									appendEscapedAndQuoted(sbComparison, DELIMITER, testMetadata.getTestStart().toString(),
@@ -460,7 +460,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 									comparisonLines = comparisonLines
 											.subList(0, min(maxHistoryItems + 1, comparisonLines.size()));
 
-									writeLines(globalComparisonFile, charset.name(), comparisonLines);
+									writeLines(globalComparisonFile, Charsets.UTF_8.name(), comparisonLines);
 								}
 							}
 						}
@@ -516,7 +516,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 
 					NumberDataSet dataSet = dataSets.get(dsKey);
 					File file = new File(sourceDir, f.getFile().getPath());
-					List<SeriesPoint> dataList = readDataFile(file, charset, intNumberFormat);
+					List<SeriesPoint> dataList = readDataFile(file, Charsets.UTF_8, intNumberFormat);
 					dataSet.addSeries(key, dataList);
 				}
 			}
@@ -579,7 +579,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 
 					NumberDataSet dataSet = dataSets.get(dsKey);
 					File file = new File(sourceDir, f.getFile().getPath());
-					List<SeriesPoint> dataList = readDataFile(file, charset, intNumberFormat);
+					List<SeriesPoint> dataList = readDataFile(file, Charsets.UTF_8, intNumberFormat);
 					dataSet.addSeries(key, dataList);
 				}
 			}
@@ -618,17 +618,17 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 
 					boolean needsHeader = true;
 					for (PerfAlyzerFile paf : errorsByTypeByMarkerMultimap.get(key)) {
-						try (BufferedReader br = Files.newReader(new File(sourceDir, paf.getFile().getPath()), charset)) {
+						try (BufferedReader br = Files.newReader(new File(sourceDir, paf.getFile().getPath()), Charsets.UTF_8)) {
 
 							String header = br.readLine();
 							if (needsHeader) {
-								writeLineToChannel(channel, "\"operation\"" + DELIMITER + header, charset);
+								writeLineToChannel(channel, "\"operation\"" + DELIMITER + header, Charsets.UTF_8);
 								needsHeader = false;
 							}
 
 							String operation = paf.getFileNameParts().get(1);
 							for (String line = null; (line = br.readLine()) != null;) {
-								writeLineToChannel(channel, "\"" + operation + "\"" + DELIMITER + line, charset);
+								writeLineToChannel(channel, "\"" + operation + "\"" + DELIMITER + line, Charsets.UTF_8);
 							}
 						}
 					}

@@ -33,7 +33,6 @@ import static org.apache.commons.lang3.StringUtils.leftPad;
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
-import java.nio.charset.Charset;
 import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.List;
@@ -48,6 +47,7 @@ import org.apache.commons.lang3.text.StrBuilder;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 
+import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.primitives.Doubles;
@@ -67,9 +67,9 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 	private final Map<String, ExecutionMeasurings> perExecutionResponseTimes = newHashMap();
 	private final Set<String> errorExecutions = newHashSet();
 
-	public MeasuringResponseTimesBinningStrategy(final Charset charset, final NumberFormat intNumberFormat,
+	public MeasuringResponseTimesBinningStrategy(final NumberFormat intNumberFormat,
 			final NumberFormat floatNumberFormat) {
-		super(charset, intNumberFormat, floatNumberFormat);
+		super(intNumberFormat, floatNumberFormat);
 	}
 
 	@Override
@@ -167,7 +167,7 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 			appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(percentile.evaluate(50d)));
 			appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(percentile.evaluate(90d)));
 			appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(Doubles.max(responseTimes)));
-			writeLineToChannel(quantilesChannel, sb.toString(), charset);
+			writeLineToChannel(quantilesChannel, sb.toString(), Charsets.UTF_8);
 
 			// write response time distributions
 			WritableByteChannel distributionChannel = channelManager.getChannel("distribution_" + mappingKey);
@@ -177,18 +177,18 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 				sb = new StrBuilder();
 				appendEscapedAndQuoted(sb, DELIMITER, e.getKey());
 				appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(e.getValue()));
-				writeLineToChannel(distributionChannel, sb.toString(), charset);
+				writeLineToChannel(distributionChannel, sb.toString(), Charsets.UTF_8);
 			}
 		}
 
 		writeExecutionAggregatedResponseTimesHeader(channelManager.getChannel("aggregatedResponseTimes"));
 		if (!perExecutionResponseTimes.isEmpty()) {
 			BinManager executionsPerMinuteBinManager = new ChannelBinManager(PerfAlyzerConstants.BIN_SIZE_MILLIS_1_MINUTE,
-					channelManager.getChannel("execMin"), "time", "count", charset, intNumberFormat);
+					channelManager.getChannel("execMin"), "time", "count", intNumberFormat);
 			BinManager executionsPerTenMinutesBinManager = new ChannelBinManager(PerfAlyzerConstants.BIN_SIZE_MILLIS_10_MINUTES,
-					channelManager.getChannel("exec10Min"), "time", "count", charset, intNumberFormat);
+					channelManager.getChannel("exec10Min"), "time", "count", intNumberFormat);
 			MedianBinManager medianExecutionBinManager = new MedianBinManager(PerfAlyzerConstants.BIN_SIZE_MILLIS_30_SECONDS,
-					channelManager.getChannel("executions"), "time", "median", charset, intNumberFormat);
+					channelManager.getChannel("executions"), "time", "median", intNumberFormat);
 
 			List<ExecutionMeasurings> values = newArrayList(perExecutionResponseTimes.values());
 			Collections.sort(values);
@@ -218,7 +218,7 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 			appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(Doubles.min(sumResponseTimes) / 1000));
 			appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(StatUtils.percentile(sumResponseTimes, 50d) / 1000));
 			appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(Doubles.max(sumResponseTimes) / 1000));
-			writeLineToChannel(channelManager.getChannel("aggregatedResponseTimes"), sb.toString(), charset);
+			writeLineToChannel(channelManager.getChannel("aggregatedResponseTimes"), sb.toString(), Charsets.UTF_8);
 		}
 	}
 
@@ -234,14 +234,14 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 		appendEscapedAndQuoted(sb, DELIMITER, "q0.5");
 		appendEscapedAndQuoted(sb, DELIMITER, "q0.9");
 		appendEscapedAndQuoted(sb, DELIMITER, "max");
-		writeLineToChannel(destChannel, sb.toString(), charset);
+		writeLineToChannel(destChannel, sb.toString(), Charsets.UTF_8);
 	}
 
 	private void writeDistributionHeader(final WritableByteChannel destChannel) throws IOException {
 		StrBuilder sb = new StrBuilder();
 		appendEscapedAndQuoted(sb, DELIMITER, "time");
 		appendEscapedAndQuoted(sb, DELIMITER, "count");
-		writeLineToChannel(destChannel, sb.toString(), charset);
+		writeLineToChannel(destChannel, sb.toString(), Charsets.UTF_8);
 	}
 
 	private void writeExecutionAggregatedResponseTimesHeader(final WritableByteChannel destChannel) throws IOException {
@@ -249,7 +249,7 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 		appendEscapedAndQuoted(sb, DELIMITER, "minExecutionTime");
 		appendEscapedAndQuoted(sb, DELIMITER, "medianExecutionTime");
 		appendEscapedAndQuoted(sb, DELIMITER, "maxExecutionTime");
-		writeLineToChannel(destChannel, sb.toString(), charset);
+		writeLineToChannel(destChannel, sb.toString(), Charsets.UTF_8);
 	}
 
 	@Override
@@ -284,9 +284,8 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 		private boolean completingLastBin;
 
 		public MedianBinManager(final int binSize, final WritableByteChannel destChannel, final String header1,
-				final String header2,
-				final Charset charset, final NumberFormat numberFormat) {
-			super(binSize, destChannel, header1, header2, charset, numberFormat);
+				final String header2, final NumberFormat numberFormat) {
+			super(binSize, destChannel, header1, header2, numberFormat);
 		}
 
 		public void addBinValue(final double seconds) {

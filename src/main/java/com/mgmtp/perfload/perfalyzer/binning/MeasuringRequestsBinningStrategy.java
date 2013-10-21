@@ -19,7 +19,6 @@ import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASUR
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
-import java.nio.charset.Charset;
 import java.text.NumberFormat;
 import java.util.Scanner;
 
@@ -35,15 +34,15 @@ public class MeasuringRequestsBinningStrategy extends AbstractBinningStrategy {
 
 	private final int binSize;
 
-	public MeasuringRequestsBinningStrategy(final Charset charset, final int binSize, final NumberFormat intNumberFormat,
+	public MeasuringRequestsBinningStrategy(final int binSize, final NumberFormat intNumberFormat,
 			final NumberFormat floatNumberFormat) {
-		super(charset, intNumberFormat, floatNumberFormat);
+		super(intNumberFormat, floatNumberFormat);
 		this.binSize = binSize;
 	}
 
 	@Override
 	public void binData(final Scanner scanner, final WritableByteChannel destChannel) throws IOException {
-		BinManager binManager = new ChannelBinManager(binSize, destChannel, "seconds", "count", charset, intNumberFormat);
+		BinManager binManager = new ChannelBinManager(binSize, destChannel, "seconds", "count", intNumberFormat);
 
 		while (scanner.hasNextLine()) {
 			tokenizer.reset(scanner.nextLine());

@@ -29,7 +29,6 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.List;
@@ -65,14 +64,13 @@ public class GcLogWorkflow extends AbstractWorkflow {
 	private final Provider<MemoryFormat> memoryFormatProvider;
 
 	@Inject
-	public GcLogWorkflow(final Charset charset, final TimestampNormalizer timestampNormalizer, final List<Marker> markers,
+	public GcLogWorkflow(final TimestampNormalizer timestampNormalizer, final List<Marker> markers,
 			final @IntFormat Provider<NumberFormat> intNumberFormatProvider,
 			final @FloatFormat Provider<NumberFormat> floatNumberFormatProvider,
 			final List<DisplayData> displayDataList, final ResourceBundle resourceBundle, final PlotCreator plotCreator,
 			final TestMetadata testMetadata, final Provider<MemoryFormat> memoryFormatProvider) {
-		super(charset, timestampNormalizer, markers, intNumberFormatProvider, floatNumberFormatProvider, displayDataList,
-				resourceBundle,
-				testMetadata, plotCreator);
+		super(timestampNormalizer, markers, intNumberFormatProvider, floatNumberFormatProvider, displayDataList,
+				resourceBundle, testMetadata, plotCreator);
 		this.memoryFormatProvider = memoryFormatProvider;
 	}
 
@@ -145,7 +143,7 @@ public class GcLogWorkflow extends AbstractWorkflow {
 				log.info("Preparing report data...");
 
 				try {
-					GcLogReportPreparationStrategy strategy = new GcLogReportPreparationStrategy(charset,
+					GcLogReportPreparationStrategy strategy = new GcLogReportPreparationStrategy(
 							intNumberFormatProvider.get(), floatNumberFormatProvider.get(), displayDataList, resourceBundle,
 							plotCreator, testMetadata, timestampNormalizer, memoryFormatProvider.get());
 					final ReporterPreparator reporter = new ReporterPreparator(inputDir, outputDir, strategy);

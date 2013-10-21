@@ -28,7 +28,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -45,6 +44,7 @@ import org.apache.commons.lang3.text.StrTokenizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Charsets;
 import com.mgmtp.mail.DefaultMailerFactory;
 import com.mgmtp.mail.Mail;
 import com.mgmtp.mail.MailAddress;
@@ -81,19 +81,17 @@ public class EmailReporter {
 	private final Properties smtpProps;
 	private final Properties subjectProps;
 	private final File soureDir;
-	private final Charset charset;
 	private final int maxHistoryItems;
 	private final Map<String, List<Pattern>> reportContentsConfigMap;
 
 	@Inject
-	public EmailReporter(final TestMetadata testMetadata, @ReportPreparationDir final File soureDir, final Charset charset,
+	public EmailReporter(final TestMetadata testMetadata, @ReportPreparationDir final File soureDir,
 			final ResourceBundle resourceBundle, final Locale locale, @Nullable @ReportsBaseUrl final String reportsBaseUrl,
 			@RelativeDestDir final File destDir, @EmailFrom final String fromAddress, @EmailTo final List<String> toAddresses,
 			@SmtpProps final Properties smtpProps, @SubjectProps final Properties subjectProps,
 			@MaxEmailHistoryItems final int maxHistoryItems, final Map<String, List<Pattern>> reportContentsConfigMap) {
 		this.testMetadata = testMetadata;
 		this.soureDir = soureDir;
-		this.charset = charset;
 		this.resourceBundle = resourceBundle;
 		this.locale = locale;
 		this.reportsBaseUrl = reportsBaseUrl;
@@ -159,7 +157,7 @@ public class EmailReporter {
 		String subjectTemplate = subjectProps.getProperty(testName);
 		if (isNotBlank(subjectTemplate)) {
 			Map<String, String> replacements = PerfAlyzerUtils.readAggregatedMap(new File(soureDir,
-					"global/[measuring][executions].csv"), charset);
+					"global/[measuring][executions].csv"), Charsets.UTF_8);
 			replacements.put("test.name", testName);
 
 			String subject = PlaceholderUtils.resolvePlaceholders(subjectTemplate, replacements);
@@ -175,7 +173,7 @@ public class EmailReporter {
 	}
 
 	private List<? extends List<String>> loadData(final File file) throws IOException {
-		try (BufferedReader br = newReader(file, charset)) {
+		try (BufferedReader br = newReader(file, Charsets.UTF_8)) {
 			List<List<String>> rows = newArrayList();
 			StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
 			tokenizer.setDelimiterChar(DELIMITER);

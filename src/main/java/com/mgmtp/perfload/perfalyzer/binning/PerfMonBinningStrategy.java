@@ -23,7 +23,6 @@ import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAn
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
-import java.nio.charset.Charset;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Scanner;
@@ -34,6 +33,7 @@ import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 import org.joda.time.Duration;
 
+import com.google.common.base.Charsets;
 import com.google.common.primitives.Doubles;
 import com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants;
 import com.mgmtp.perfload.perfalyzer.util.ChannelManager;
@@ -51,8 +51,8 @@ public class PerfMonBinningStrategy extends AbstractBinningStrategy {
 	private PerfMonTypeConfig typeConfig;
 	private String type;
 
-	public PerfMonBinningStrategy(final Charset charset, final NumberFormat intNumberFormat, final NumberFormat floatNumberFormat) {
-		super(charset, intNumberFormat, floatNumberFormat);
+	public PerfMonBinningStrategy(final NumberFormat intNumberFormat, final NumberFormat floatNumberFormat) {
+		super(intNumberFormat, floatNumberFormat);
 	}
 
 	@Override
@@ -137,7 +137,7 @@ public class PerfMonBinningStrategy extends AbstractBinningStrategy {
 				throw new IllegalStateException("Invalid perfMon data type");
 		}
 
-		writeLineToChannel(destChannel, sb.toString(), charset);
+		writeLineToChannel(destChannel, sb.toString(), Charsets.UTF_8);
 	}
 
 	private void writeAggregatedHeader(final WritableByteChannel destChannel) throws IOException {
@@ -163,7 +163,7 @@ public class PerfMonBinningStrategy extends AbstractBinningStrategy {
 				throw new IllegalStateException("Invalid perfMon data type");
 		}
 
-		writeLineToChannel(destChannel, sb.toString(), charset);
+		writeLineToChannel(destChannel, sb.toString(), Charsets.UTF_8);
 	}
 
 	private void writeBinnedLine(final List<Double> binValues, final int binIndex, final WritableByteChannel destChannel)
@@ -188,7 +188,7 @@ public class PerfMonBinningStrategy extends AbstractBinningStrategy {
 				throw new IllegalStateException("Invalid perfMon data type");
 		}
 
-		writeLineToChannel(destChannel, sb.toString(), charset);
+		writeLineToChannel(destChannel, sb.toString(), Charsets.UTF_8);
 	}
 
 	private void writeAggregatedLine(final WritableByteChannel destChannel) throws IOException {
@@ -219,7 +219,7 @@ public class PerfMonBinningStrategy extends AbstractBinningStrategy {
 					throw new IllegalStateException("Invalid perfMon data type");
 			}
 
-			writeLineToChannel(destChannel, sb.toString(), charset);
+			writeLineToChannel(destChannel, sb.toString(), Charsets.UTF_8);
 		}
 	}
 

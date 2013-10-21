@@ -28,7 +28,6 @@ import static org.apache.commons.io.FileUtils.writeLines;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Set;
 
@@ -36,6 +35,7 @@ import org.apache.commons.lang3.text.StrTokenizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Charsets;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Collections2;
@@ -52,11 +52,9 @@ public class RequestFilesMerger {
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final File binnedDir;
-	private final Charset charset;
 
-	public RequestFilesMerger(final File binnedDir, final Charset charset) {
+	public RequestFilesMerger(final File binnedDir) {
 		this.binnedDir = binnedDir;
-		this.charset = charset;
 	}
 
 	public void mergeFiles() throws IOException {
@@ -87,11 +85,11 @@ public class RequestFilesMerger {
 
 			PerfAlyzerFile paf1 = getOnlyElement(Collections2.filter(list, predicate1));
 			File file1 = new File(binnedDir, paf1.getFile().getPath());
-			List<String> lines1 = Files.readLines(file1, charset);
+			List<String> lines1 = Files.readLines(file1, Charsets.UTF_8);
 
 			PerfAlyzerFile paf2 = getOnlyElement(Collections2.filter(list, predicate2));
 			File file2 = new File(binnedDir, paf2.getFile().getPath());
-			List<String> lines2 = Files.readLines(file2, charset);
+			List<String> lines2 = Files.readLines(file2, Charsets.UTF_8);
 
 			if (lines1.size() == lines2.size()) {
 				File resultFile = new File(binnedDir, paf1.copy().removeFileNamePart(2).addFileNamePart("aggregated").getFile()
@@ -103,7 +101,7 @@ public class RequestFilesMerger {
 					resultLines.add(line1 + DELIMITER + line2);
 				}
 
-				writeLines(resultFile, charset.name(), resultLines);
+				writeLines(resultFile, Charsets.UTF_8.name(), resultLines);
 
 				deleteQuietly(file1);
 				deleteQuietly(file2);

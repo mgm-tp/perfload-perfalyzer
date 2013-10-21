@@ -24,7 +24,6 @@ import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.perfAlyzerFileNa
 import static org.apache.commons.io.FileUtils.deleteQuietly;
 
 import java.io.File;
-import java.nio.charset.Charset;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -35,7 +34,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.mgmtp.perfload.perfalyzer.PerfAlyzerException;
 import com.mgmtp.perfload.perfalyzer.annotations.FloatFormat;
@@ -70,12 +68,12 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 	private final int maxHistoryItems;
 
 	@Inject
-	public MeasuringWorkflow(final Charset charset, final TimestampNormalizer timestampNormalizer, final List<Marker> markers,
+	public MeasuringWorkflow(final TimestampNormalizer timestampNormalizer, final List<Marker> markers,
 			final @IntFormat Provider<NumberFormat> intNumberFormatProvider,
 			final @FloatFormat Provider<NumberFormat> floatNumberFormatProvider,
 			final List<DisplayData> displayDataList, final ResourceBundle resourceBundle, final PlotCreator plotCreator,
 			final TestMetadata testMetadata, @MaxHistoryItems final int maxHistoryItems) {
-		super(charset, timestampNormalizer, markers, intNumberFormatProvider, floatNumberFormatProvider, displayDataList,
+		super(timestampNormalizer, markers, intNumberFormatProvider, floatNumberFormatProvider, displayDataList,
 				resourceBundle, testMetadata, plotCreator);
 		this.maxHistoryItems = maxHistoryItems;
 	}
@@ -96,7 +94,7 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 					smf.mergeFiles();
 
 					MeasuringNormalizingStrategy strat = new MeasuringNormalizingStrategy(timestampNormalizer, markers);
-					Normalizer normalizer = new Normalizer(sortMergeOutputDir, outputDir, Charsets.UTF_8, strat);
+					Normalizer normalizer = new Normalizer(sortMergeOutputDir, outputDir, strat);
 
 					log.info("Normalizing '{}'", mergedMeasuringLog);
 					normalizer.normalize(mergedMeasuringLog);
@@ -124,9 +122,9 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 					try {
 						log.info("Binning response times: '{}'", file);
 
-						MeasuringResponseTimesBinningStrategy strategy = new MeasuringResponseTimesBinningStrategy(charset,
+						MeasuringResponseTimesBinningStrategy strategy = new MeasuringResponseTimesBinningStrategy(
 								intNumberFormatProvider.get(), floatNumberFormatProvider.get());
-						final Binner binner = new Binner(inputDir, outputDir, charset, strategy);
+						final Binner binner = new Binner(inputDir, outputDir, strategy);
 						binner.binFile(file);
 
 						latchProvider.get().countDown();
@@ -142,10 +140,10 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 					try {
 						log.info("Binning requests: '{}'", file);
 
-						MeasuringRequestsBinningStrategy strategy = new MeasuringRequestsBinningStrategy(charset,
+						MeasuringRequestsBinningStrategy strategy = new MeasuringRequestsBinningStrategy(
 								PerfAlyzerConstants.BIN_SIZE_MILLIS_1_MINUTE, intNumberFormatProvider.get(),
 								floatNumberFormatProvider.get());
-						final Binner binner = new Binner(inputDir, outputDir, charset, strategy);
+						final Binner binner = new Binner(inputDir, outputDir, strategy);
 						binner.binFile(file);
 
 						latchProvider.get().countDown();
@@ -161,10 +159,10 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 					try {
 						log.info("Binning requests: '{}'", file);
 
-						MeasuringRequestsBinningStrategy strategy = new MeasuringRequestsBinningStrategy(charset,
+						MeasuringRequestsBinningStrategy strategy = new MeasuringRequestsBinningStrategy(
 								PerfAlyzerConstants.BIN_SIZE_MILLIS_1_SECOND, intNumberFormatProvider.get(),
 								floatNumberFormatProvider.get());
-						final Binner binner = new Binner(inputDir, outputDir, charset, strategy);
+						final Binner binner = new Binner(inputDir, outputDir, strategy);
 						binner.binFile(file);
 
 						latchProvider.get().countDown();
@@ -180,8 +178,8 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 					try {
 						log.info("Binning requests: '{}'", file);
 						MeasuringAggregatedRequestsBinningStrategy strategy = new MeasuringAggregatedRequestsBinningStrategy(
-								charset, intNumberFormatProvider.get(), floatNumberFormatProvider.get());
-						final Binner binner = new Binner(inputDir, outputDir, charset, strategy);
+								intNumberFormatProvider.get(), floatNumberFormatProvider.get());
+						final Binner binner = new Binner(inputDir, outputDir, strategy);
 						binner.binFile(file);
 
 						latchProvider.get().countDown();
@@ -196,9 +194,9 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 				public void run() {
 					try {
 						log.info("Binning errors: '{}'", file);
-						ErrorCountBinningStragegy strategy = new ErrorCountBinningStragegy(charset,
+						ErrorCountBinningStragegy strategy = new ErrorCountBinningStragegy(
 								intNumberFormatProvider.get(), floatNumberFormatProvider.get());
-						final Binner binner = new Binner(inputDir, outputDir, charset, strategy);
+						final Binner binner = new Binner(inputDir, outputDir, strategy);
 						binner.binFile(file);
 
 						latchProvider.get().countDown();
@@ -218,7 +216,7 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 			public void run() {
 				try {
 					latchProvider.get().await();
-					RequestFilesMerger merger = new RequestFilesMerger(outputDir, charset);
+					RequestFilesMerger merger = new RequestFilesMerger(outputDir);
 					merger.mergeFiles();
 				} catch (InterruptedException ex) {
 					Thread.currentThread().interrupt();
@@ -242,9 +240,9 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 				try {
 					log.info("Preparing report data...");
 
-					ReportPreparationStrategy strategy = new MeasuringReportPreparationStrategy(charset,
-							intNumberFormatProvider.get(), floatNumberFormatProvider.get(), displayDataList, resourceBundle,
-							plotCreator, testMetadata, maxHistoryItems);
+					ReportPreparationStrategy strategy = new MeasuringReportPreparationStrategy(intNumberFormatProvider.get(),
+							floatNumberFormatProvider.get(), displayDataList, resourceBundle, plotCreator, testMetadata,
+							maxHistoryItems);
 					final ReporterPreparator reporter = new ReporterPreparator(inputDir, outputDir, strategy);
 					reporter.processFiles(from(inputFiles).filter(perfAlyzerFileNameContains("measuring")).toList());
 				} catch (Exception ex) {
