@@ -295,17 +295,19 @@ public class PerfAlyzerModule extends AbstractModule {
 
 	@Provides
 	@IntFormat
-	NumberFormat provideFloatFormat(final Locale locale) {
+	NumberFormat provideIntFormat(final Locale locale) {
 		NumberFormat nf = NumberFormat.getIntegerInstance(locale);
+		nf.setGroupingUsed(false);
 		nf.setRoundingMode(RoundingMode.HALF_UP);
 		return nf;
 	}
 
 	@Provides
 	@FloatFormat
-	NumberFormat provideIntFormat(final Locale locale) {
+	NumberFormat provideFloatFormat(final Locale locale) {
 		DecimalFormatSymbols dfs = new DecimalFormatSymbols(locale);
 		NumberFormat nf = new DecimalFormat("0.00", dfs);
+		nf.setGroupingUsed(false);
 		nf.setRoundingMode(RoundingMode.HALF_UP);
 		return nf;
 	}
