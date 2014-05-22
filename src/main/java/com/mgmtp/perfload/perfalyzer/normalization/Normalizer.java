@@ -21,6 +21,7 @@ import static com.google.common.collect.Maps.newHashMap;
 import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
 import static org.apache.commons.io.FilenameUtils.getPath;
 import static org.apache.commons.io.IOUtils.closeQuietly;
+import static org.apache.commons.lang.StringUtils.trimToNull;
 import static org.apache.commons.lang3.StringUtils.split;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
@@ -43,7 +44,7 @@ import com.google.common.base.Charsets;
 import com.mgmtp.perfload.perfalyzer.util.ChannelData;
 
 /**
- * Perfomrs normalization tasks.
+ * Performs normalization tasks.
  * 
  * @author ctchinda
  */
@@ -91,6 +92,9 @@ public class Normalizer {
 			fis = new FileInputStream(new File(sourceDir, filePath)); //relative to source dir
 			for (Scanner scanner = new Scanner(fis.getChannel(), Charsets.UTF_8.name()); scanner.hasNext();) {
 				String line = scanner.nextLine();
+				if (trimToNull(line) == null) {
+					continue;
+				}
 				List<ChannelData> channelDataList = normalizingStrategy.normalizeLine(file.getName(), line);
 				for (ChannelData channelData : channelDataList) {
 
