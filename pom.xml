@@ -29,6 +29,8 @@
 
 	<url>https://github.com/mgm-tp/perfload-perfalyzer</url>
 
+	<inceptionYear>2013</inceptionYear>
+
 	<issueManagement>
 		<system>Github Issue Tracker</system>
 		<url>https://github.com/mgm-tp/perfload/issues</url>
