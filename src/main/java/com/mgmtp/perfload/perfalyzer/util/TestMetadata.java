@@ -59,7 +59,7 @@ public class TestMetadata {
 		String duration = DurationFormatUtils.formatDurationHMS(new Duration(new DateTime(start), new DateTime(end)).getMillis());
 
 		String operationsString = properties.getProperty("operations");
-		Set<String> operations = newTreeSet(on(',').split(operationsString));
+		Set<String> operations = newTreeSet(on(',').trimResults().split(operationsString));
 		return new TestMetadata(start, end, duration, properties.getProperty("test.file"), rawResultsDir,
 				properties.getProperty("perfload.implementation.version"), properties.getProperty("test.comment"), operations);
 	}

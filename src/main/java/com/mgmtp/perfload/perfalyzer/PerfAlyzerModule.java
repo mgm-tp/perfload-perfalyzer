@@ -48,6 +48,7 @@ import com.mgmtp.perfload.perfalyzer.reportpreparation.DisplayData;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator;
 import com.mgmtp.perfload.perfalyzer.util.Marker;
 import com.mgmtp.perfload.perfalyzer.util.MemoryFormat;
+import com.mgmtp.perfload.perfalyzer.util.PropertiesUtils;
 import com.mgmtp.perfload.perfalyzer.util.ResourceBundleProvider;
 import com.mgmtp.perfload.perfalyzer.util.ResourceBundleProvider.Utf8Control;
 import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
@@ -89,6 +90,7 @@ import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadIntoProperties;
 import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadProperties;
 import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.saveProperties;
+import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.setIfNonNull;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 
 /**
@@ -168,8 +170,20 @@ public class PerfAlyzerModule extends AbstractModule {
 	private void bindTestMetadata(final File unzippedDir) {
 		File metaPropsFile = new File(unzippedDir, "console/console-logs/perfload.meta.utf8.props");
 		try {
-			log.info("Loading test meta properties...");
-			Properties perfLoadMetaProps = loadProperties(metaPropsFile);
+			Properties perfLoadMetaProps;
+			if (metaPropsFile.exists()) {
+				log.info("Loading test meta properties...");
+				perfLoadMetaProps = loadProperties(metaPropsFile);
+			} else {
+				log.warn("Testplan properties file does not exist: {}", metaPropsFile);
+				perfLoadMetaProps = new Properties();
+			}
+			// args override
+			setIfNonNull(perfLoadMetaProps, "test.start", args.testStartDate);
+			setIfNonNull(perfLoadMetaProps, "test.finish", args.testFinishDate);
+			setIfNonNull(perfLoadMetaProps, "test.comment", args.testComment);
+			setIfNonNull(perfLoadMetaProps, "operations", args.operations);
+
 			TestMetadata testMetadata = TestMetadata.create(args.inputDir.getName(), perfLoadMetaProps);
 			bind(TestMetadata.class).toInstance(testMetadata);
 		} catch (IOException ex) {

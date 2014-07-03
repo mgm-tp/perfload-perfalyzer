@@ -15,14 +15,14 @@
  */
 package com.mgmtp.perfload.perfalyzer.util;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.Properties;
-
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
 
 /**
  * @author rnaegele
@@ -52,6 +52,12 @@ public class PropertiesUtils {
 		try (Writer w = Files.newWriter(propertiesFile, Charsets.UTF_8)) {
 			props.store(w, "perfAlyzer properties");
 			return props;
+		}
+	}
+
+	public static void setIfNonNull(Properties properties, String key, String value) {
+		if (value != null) {
+			properties.setProperty(key, value);
 		}
 	}
 }

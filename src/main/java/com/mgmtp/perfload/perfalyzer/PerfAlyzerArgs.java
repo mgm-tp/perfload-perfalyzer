@@ -16,9 +16,16 @@
 package com.mgmtp.perfload.perfalyzer;
 
 import java.io.File;
+import java.util.Set;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.converters.FileConverter;
+import org.apache.commons.lang3.time.DurationFormatUtils;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
+
+import static com.google.common.base.Splitter.on;
+import static com.google.common.collect.Sets.newTreeSet;
 
 /**
  * @author ctchinda
@@ -42,4 +49,16 @@ public class PerfAlyzerArgs {
 
 	@Parameter(names = "-u", arity = 1, description = "Unzip test archives")
 	boolean unzip = true;
+
+	@Parameter(names = "-test.start", arity = 1, description = "Test start timestamp in ISO8601 date/time/timezone format (yyyy-MM-dd'T'HH:mm:ssZZ)")
+	String testStartDate;
+
+	@Parameter(names = "-test.finish", arity = 1, description = "Test finish timestamp in ISO8601 date/time/timezone format (yyyy-MM-dd'T'HH:mm:ssZZ)")
+	String testFinishDate;
+
+	@Parameter(names = "-operations", arity = 1, description = "A comma-separated string of operations executed during the test")
+	String operations;
+
+	@Parameter(names = "-test.comment", arity = 1, description = "A comment for the test")
+	String testComment;
 }
