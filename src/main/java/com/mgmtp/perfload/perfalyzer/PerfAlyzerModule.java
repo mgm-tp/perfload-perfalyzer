@@ -15,40 +15,6 @@
  */
 package com.mgmtp.perfload.perfalyzer;
 
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Lists.newArrayListWithCapacity;
-import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadIntoProperties;
-import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadProperties;
-import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.saveProperties;
-import static org.apache.commons.io.FileUtils.deleteDirectory;
-import groovy.util.ConfigObject;
-import groovy.util.ConfigSlurper;
-
-import java.io.File;
-import java.io.IOException;
-import java.math.RoundingMode;
-import java.nio.charset.Charset;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.ResourceBundle;
-import java.util.ResourceBundle.Control;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.inject.Singleton;
-
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
@@ -92,6 +58,38 @@ import com.mgmtp.perfload.perfalyzer.workflow.MeasuringWorkflow;
 import com.mgmtp.perfload.perfalyzer.workflow.PerfMonWorkflow;
 import com.mgmtp.perfload.perfalyzer.workflow.Workflow;
 import com.mgmtp.perfload.perfalyzer.workflow.WorkflowExecutor;
+import groovy.util.ConfigObject;
+import groovy.util.ConfigSlurper;
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Singleton;
+import javax.mail.Authenticator;
+import javax.mail.PasswordAuthentication;
+import java.io.File;
+import java.io.IOException;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.ResourceBundle;
+import java.util.ResourceBundle.Control;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Lists.newArrayListWithCapacity;
+import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadIntoProperties;
+import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadProperties;
+import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.saveProperties;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 
 /**
  * @author rnaegele
@@ -205,7 +203,6 @@ public class PerfAlyzerModule extends AbstractModule {
 			ConfigObject emailConfig = get(configObject, "email");
 			Boolean flag = get(emailConfig, "enabled");
 			if (flag) {
-
 				bindConstant().annotatedWith(EmailFrom.class).to((String) emailConfig.get("from"));
 
 				List<String> toList = get(emailConfig, "to");
@@ -213,8 +210,32 @@ public class PerfAlyzerModule extends AbstractModule {
 					//
 				}).annotatedWith(EmailTo.class).toInstance(toList);
 
-				ConfigObject smptConfig = get(emailConfig, "smtp");
-				Properties smtpProps = smptConfig.toProperties("smtp");
+				ConfigObject smtpConfig = get(emailConfig, "smtp");
+
+				Boolean auth = (Boolean) smtpConfig.get("auth");
+				if (auth != null && auth) {
+					final String username = (String) smtpConfig.get("username");
+					final String password = (String) smtpConfig.get("password");
+					bind(Authenticator.class).toInstance(new Authenticator() {
+						@Override
+						protected PasswordAuthentication getPasswordAuthentication() {
+							return new PasswordAuthentication(username, password);
+						}
+					});
+				}
+				Boolean ssl = (Boolean) smtpConfig.remove("ssl");
+				String prefix;
+				String protocol;
+				if (ssl != null && ssl) {
+					protocol = "smtps";
+					prefix = "mail.smtps";
+				} else {
+					protocol = "smtp";
+					prefix = "mail.smtp";
+				}
+
+				Properties smtpProps = smtpConfig.toProperties(prefix);
+				smtpProps.setProperty("mail.transport.protocol", protocol);
 				bind(Properties.class).annotatedWith(SmtpProps.class).toInstance(smtpProps);
 
 				ConfigObject subjectConfig = get(emailConfig, "subjects");

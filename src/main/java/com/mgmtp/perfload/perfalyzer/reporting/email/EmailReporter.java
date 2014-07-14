@@ -15,39 +15,7 @@
  */
 package com.mgmtp.perfload.perfalyzer.reporting.email;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Maps.newTreeMap;
-import static com.google.common.io.Files.newReader;
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
-import static java.lang.Math.min;
-import static org.apache.commons.io.FilenameUtils.normalize;
-import static org.apache.commons.io.FilenameUtils.removeExtension;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.ResourceBundle;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.annotation.Nullable;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
-import org.apache.commons.lang3.text.StrTokenizer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.base.Charsets;
-import com.mgmtp.mail.DefaultMailerFactory;
-import com.mgmtp.mail.Mail;
-import com.mgmtp.mail.MailAddress;
 import com.mgmtp.perfload.perfalyzer.annotations.EmailFrom;
 import com.mgmtp.perfload.perfalyzer.annotations.EmailTo;
 import com.mgmtp.perfload.perfalyzer.annotations.MaxEmailHistoryItems;
@@ -60,10 +28,46 @@ import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
 import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerUtils;
 import com.mgmtp.perfload.perfalyzer.util.PlaceholderUtils;
 import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
+import org.apache.commons.lang3.text.StrTokenizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import javax.mail.Authenticator;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.ResourceBundle;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.google.common.base.Joiner.on;
+import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Maps.newTreeMap;
+import static com.google.common.io.Files.newReader;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
+import static java.lang.Math.min;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.io.FilenameUtils.normalize;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * Creates an e-mail report.
- * 
+ *
  * @author rnaegele
  */
 @Singleton
@@ -81,14 +85,15 @@ public class EmailReporter {
 	private final Properties smtpProps;
 	private final Properties subjectProps;
 	private final File soureDir;
+	private final Authenticator authenticator;
 	private final int maxHistoryItems;
 	private final Map<String, List<Pattern>> reportContentsConfigMap;
 
 	@Inject
-	public EmailReporter(final TestMetadata testMetadata, @ReportPreparationDir final File soureDir,
-			final ResourceBundle resourceBundle, final Locale locale, @Nullable @ReportsBaseUrl final String reportsBaseUrl,
-			@RelativeDestDir final File destDir, @EmailFrom final String fromAddress, @EmailTo final List<String> toAddresses,
-			@SmtpProps final Properties smtpProps, @SubjectProps final Properties subjectProps,
+	public EmailReporter(final TestMetadata testMetadata, @ReportPreparationDir final File soureDir, final ResourceBundle resourceBundle,
+			final Locale locale, @Nullable @ReportsBaseUrl final String reportsBaseUrl, @RelativeDestDir final File destDir,
+			@EmailFrom final String fromAddress, @EmailTo final List<String> toAddresses, @SmtpProps final Properties smtpProps,
+			@SubjectProps final Properties subjectProps, @Nullable Authenticator authenticator,
 			@MaxEmailHistoryItems final int maxHistoryItems, final Map<String, List<Pattern>> reportContentsConfigMap) {
 		this.testMetadata = testMetadata;
 		this.soureDir = soureDir;
@@ -100,6 +105,7 @@ public class EmailReporter {
 		this.toAddresses = toAddresses;
 		this.smtpProps = smtpProps;
 		this.subjectProps = subjectProps;
+		this.authenticator = authenticator;
 		this.maxHistoryItems = maxHistoryItems;
 		this.reportContentsConfigMap = reportContentsConfigMap;
 	}
@@ -146,13 +152,9 @@ public class EmailReporter {
 		StringWriter sw = new StringWriter(1000);
 		skeleton.write(sw);
 
-		Mail.Builder builder = new Mail.Builder(new MailAddress(fromAddress), new MailAddress(toAddresses.get(0)));
-		for (int i = 1; i < toAddresses.size(); ++i) {
-			builder.addTo(toAddresses.get(i));
-		}
+		String content = sw.toString();
 
-		builder.setHtmlBody(sw.toString());
-
+		String subject;
 		String testName = removeExtension(testMetadata.getTestPlanFile());
 		String subjectTemplate = subjectProps.getProperty(testName);
 		if (isNotBlank(subjectTemplate)) {
@@ -160,16 +162,28 @@ public class EmailReporter {
 					"global/[measuring][executions].csv"), Charsets.UTF_8);
 			replacements.put("test.name", testName);
 
-			String subject = PlaceholderUtils.resolvePlaceholders(subjectTemplate, replacements);
-			builder.setSubject(subject);
+			subject = PlaceholderUtils.resolvePlaceholders(subjectTemplate, replacements);
 		} else {
-			builder.setSubject("perfLoad E-mail Report");
+			subject = "perfLoad E-mail Report";
 		}
 
-		Mail mail = builder.build();
+		sendMessage(subject, content);
+	}
 
-		log.info("Sending mail...");
-		DefaultMailerFactory.get().create(smtpProps).send(mail);
+	private void sendMessage(final String subject, final String content) {
+		try {
+			Session session = (authenticator != null) ? Session.getInstance(smtpProps, authenticator) : Session.getInstance(smtpProps);
+
+			MimeMessage msg = new MimeMessage(session);
+			msg.setFrom(new InternetAddress(fromAddress));
+			msg.setSubject(subject);
+			msg.addRecipients(Message.RecipientType.TO, on(',').join(toAddresses));
+			msg.setText(content, UTF_8.name(), "html");
+
+			Transport.send(msg);
+		} catch (MessagingException e) {
+			log.error("Error while creating report e-mail", e);
+		}
 	}
 
 	private List<? extends List<String>> loadData(final File file) throws IOException {
@@ -178,7 +192,7 @@ public class EmailReporter {
 			StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
 			tokenizer.setDelimiterChar(DELIMITER);
 
-			for (String line = null; (line = br.readLine()) != null;) {
+			for (String line = null; (line = br.readLine()) != null; ) {
 				tokenizer.reset(line);
 				List<String> tokenList = tokenizer.getTokenList();
 				rows.add(tokenList);

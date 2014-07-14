@@ -12,7 +12,7 @@ email {
 	from = null
 	to = []
 	smtp {
-		host = 'smtp-relay.mgm-tp.com'
+		// host =
 		// port = 
 		// ssl = true
 		// auth = true
