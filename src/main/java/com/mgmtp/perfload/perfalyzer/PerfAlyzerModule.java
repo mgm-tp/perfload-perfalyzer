@@ -15,6 +15,41 @@
  */
 package com.mgmtp.perfload.perfalyzer;
 
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Lists.newArrayListWithCapacity;
+import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadIntoProperties;
+import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadProperties;
+import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.saveProperties;
+import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.setIfNonNull;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
+import groovy.util.ConfigObject;
+import groovy.util.ConfigSlurper;
+
+import java.io.File;
+import java.io.IOException;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.ResourceBundle;
+import java.util.ResourceBundle.Control;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.inject.Singleton;
+import javax.mail.Authenticator;
+import javax.mail.PasswordAuthentication;
+
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
@@ -48,7 +83,6 @@ import com.mgmtp.perfload.perfalyzer.reportpreparation.DisplayData;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator;
 import com.mgmtp.perfload.perfalyzer.util.Marker;
 import com.mgmtp.perfload.perfalyzer.util.MemoryFormat;
-import com.mgmtp.perfload.perfalyzer.util.PropertiesUtils;
 import com.mgmtp.perfload.perfalyzer.util.ResourceBundleProvider;
 import com.mgmtp.perfload.perfalyzer.util.ResourceBundleProvider.Utf8Control;
 import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
@@ -59,39 +93,6 @@ import com.mgmtp.perfload.perfalyzer.workflow.MeasuringWorkflow;
 import com.mgmtp.perfload.perfalyzer.workflow.PerfMonWorkflow;
 import com.mgmtp.perfload.perfalyzer.workflow.Workflow;
 import com.mgmtp.perfload.perfalyzer.workflow.WorkflowExecutor;
-import groovy.util.ConfigObject;
-import groovy.util.ConfigSlurper;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Singleton;
-import javax.mail.Authenticator;
-import javax.mail.PasswordAuthentication;
-import java.io.File;
-import java.io.IOException;
-import java.math.RoundingMode;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.ResourceBundle;
-import java.util.ResourceBundle.Control;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Lists.newArrayListWithCapacity;
-import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadIntoProperties;
-import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadProperties;
-import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.saveProperties;
-import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.setIfNonNull;
-import static org.apache.commons.io.FileUtils.deleteDirectory;
 
 /**
  * @author rnaegele

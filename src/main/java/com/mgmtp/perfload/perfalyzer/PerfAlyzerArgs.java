@@ -16,16 +16,9 @@
 package com.mgmtp.perfload.perfalyzer;
 
 import java.io.File;
-import java.util.Set;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.converters.FileConverter;
-import org.apache.commons.lang3.time.DurationFormatUtils;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
-
-import static com.google.common.base.Splitter.on;
-import static com.google.common.collect.Sets.newTreeSet;
 
 /**
  * @author ctchinda
