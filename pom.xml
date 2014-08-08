@@ -23,7 +23,7 @@
 	</parent>
 	<groupId>com.mgmtp.perfload</groupId>
 	<artifactId>perfload-perfalyzer</artifactId>
-	<version>1.0.0-beta-1</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<name>mgm perfLoad perfAlyzer</name>
 	<description>mgm perfLoad perfAlyzer</description>
 
@@ -40,7 +40,7 @@
 		<connection>scm:git:git://github.com/mgm-tp/perfload-perfalyzer.git</connection>
 		<developerConnection>scm:git:ssh://git@github.com/mgm-tp/perfload-perfalyzer.git</developerConnection>
 		<url>https://github.com/mgm-tp/perfload-perfalyzer</url>
-		<tag>perfload-perfalyzer-1.0.0-beta-1</tag>
+		<tag>HEAD</tag>
 	</scm>
 
 	<licenses>
