@@ -17,25 +17,30 @@ package com.mgmtp.perfload.perfalyzer.util;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.computeNormalizedPath;
-import static org.apache.commons.io.FilenameUtils.getBaseName;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.zip.ZipFile;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.DirectoryWalker;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.rauschig.jarchivelib.Archiver;
+import org.rauschig.jarchivelib.ArchiverFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Recursively copies or unzips files to a destination directory.
- * 
+ * Recursively copies or extracts files to a destination directory.
+ *
  * @author rnaegele
  */
-public class Unzipper extends DirectoryWalker<File> {
+public class ArchiveExtracter extends DirectoryWalker<File> {
+	private static final Pattern ARCHIVE_PATTERN = Pattern.compile("\\.(zip|tar\\.gz|tgz)$");
+
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final File baseDir;
@@ -50,16 +55,16 @@ public class Unzipper extends DirectoryWalker<File> {
 	 * @param destDir
 	 *            the destination directory
 	 */
-	public Unzipper(final File baseDir, final File destDir) throws IOException {
+	public ArchiveExtracter(final File baseDir, final File destDir) throws IOException {
 		this.baseDir = baseDir;
 		this.normalizedBaseDirPath = computeNormalizedPath(baseDir);
 		this.normalizedDestDirPath = computeNormalizedPath(destDir);
 	}
 
 	/**
-	 *
+	 * Walk the directory extracting or copying files.
 	 */
-	public void unzip() throws IOException {
+	public void extract() throws IOException {
 		walk(baseDir, null);
 	}
 
@@ -73,12 +78,12 @@ public class Unzipper extends DirectoryWalker<File> {
 	}
 
 	/**
-	 * Processes a file. If the file is a zip, it is extracted to a dirctory with the name of the
-	 * zip file. Otherwise, the file is copied to the destination dirctory.
+	 * Processes a file. If the file is an archive (zip, tar.gz, tgz), it is extracted to a
+	 * directory with the name of the archive file. Otherwise, the file is copied to the destination
+	 * directory.
 	 */
 	@Override
 	protected void handleFile(final File file, final int depth, final Collection<File> results) throws IOException {
-
 		String fileName = file.getName();
 
 		File targetDir = new File(normalizedDestDirPath, currentNormalizedRelativeDirPath);
@@ -86,14 +91,22 @@ public class Unzipper extends DirectoryWalker<File> {
 			checkState(targetDir.mkdirs(), "Could not create directory: " + targetDir);
 		}
 
-		if (fileName.endsWith(".zip")) {
-			log.debug("Unzipping file: {}", file);
-			String baseName = getBaseName(fileName);
-			IoUtilities.unzip(new ZipFile(file), new File(targetDir, baseName));
+		Matcher matcher = ARCHIVE_PATTERN.matcher(fileName);
+		if (matcher.find()) {
+			log.debug("Extracting file: {}", file);
+
+			try {
+				String extension = matcher.group(1);
+				String baseName = StringUtils.substringBeforeLast(fileName, extension);
+				Archiver archiver = ArchiverFactory.createArchiver(file);
+				archiver.extract(file, new File(targetDir, baseName));
+			} catch (IOException ex) {
+				log.error("Error extracting file: " + file, ex);
+			}
 		} else {
 			log.debug("Copying file: {}", file);
 
-			// We skip supervisor.log because the Supervisor might be running perfAlyzer 
+			// We skip supervisor.log because the Supervisor might be running perfAlyzer
 			// and the file could be locked. The file is not needed anyways.
 			if (!"supervisor.log".equals(file.getName())) {
 				FileUtils.copyFile(file, new File(targetDir, fileName));

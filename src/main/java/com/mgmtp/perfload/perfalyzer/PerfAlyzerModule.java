@@ -81,13 +81,13 @@ import com.mgmtp.perfload.perfalyzer.reporting.ReportCreator;
 import com.mgmtp.perfload.perfalyzer.reporting.email.EmailReporter;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.DisplayData;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator;
+import com.mgmtp.perfload.perfalyzer.util.ArchiveExtracter;
 import com.mgmtp.perfload.perfalyzer.util.Marker;
 import com.mgmtp.perfload.perfalyzer.util.MemoryFormat;
 import com.mgmtp.perfload.perfalyzer.util.ResourceBundleProvider;
 import com.mgmtp.perfload.perfalyzer.util.ResourceBundleProvider.Utf8Control;
 import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
 import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
-import com.mgmtp.perfload.perfalyzer.util.Unzipper;
 import com.mgmtp.perfload.perfalyzer.workflow.GcLogWorkflow;
 import com.mgmtp.perfload.perfalyzer.workflow.MeasuringWorkflow;
 import com.mgmtp.perfload.perfalyzer.workflow.PerfMonWorkflow;
@@ -140,16 +140,16 @@ public class PerfAlyzerModule extends AbstractModule {
 					log.info("Directory '{}' already exists. Deleting it...", unzippedDir);
 					deleteDirectory(unzippedDir);
 				}
-				log.info("Unzipping result archives...");
-				Unzipper unzipper = new Unzipper(args.inputDir, unzippedDir);
-				unzipper.unzip();
+				log.info("Extracting result archives...");
+				ArchiveExtracter archiveExtracter = new ArchiveExtracter(args.inputDir, unzippedDir);
+				archiveExtracter.extract();
 			} catch (IOException ex) {
 				Throwables.propagate(ex);
 			}
 		} else {
 			checkState(unzippedDir.isDirectory(),
-					"Unzipping was turned off, but directory with unzipped files does not exist or is not a directory: %s",
-					unzippedDir);
+				"Unzipping was turned off, but directory with unzipped files does not exist or is not a directory: %s",
+				unzippedDir);
 		}
 
 		createBindingsFromConfigFile(args.outputDir);
@@ -262,7 +262,7 @@ public class PerfAlyzerModule extends AbstractModule {
 					maxEmailHistoryItems = maxHistoryItems;
 				} else {
 					checkState(maxEmailHistoryItems <= maxHistoryItems,
-							"Max. history items in e-mail cannot be greater than global max history items");
+						"Max. history items in e-mail cannot be greater than global max history items");
 				}
 				bindConstant().annotatedWith(MaxEmailHistoryItems.class).to(maxEmailHistoryItems);
 
@@ -284,8 +284,8 @@ public class PerfAlyzerModule extends AbstractModule {
 				String originalLocaleString = localProps.getProperty("locale");
 				if (!originalLocaleString.equals(localeString)) {
 					log.warn(
-							"Configured locale ({}) has changed but is ignored for compatibility reasons with comparison data. Locale used: {}",
-							localeString, originalLocaleString);
+						"Configured locale ({}) has changed but is ignored for compatibility reasons with comparison data. Locale used: {}",
+						localeString, originalLocaleString);
 				}
 				localeString = originalLocaleString;
 			} else {

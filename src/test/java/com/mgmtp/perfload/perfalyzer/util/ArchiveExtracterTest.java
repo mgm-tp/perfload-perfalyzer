@@ -25,18 +25,16 @@ import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.testng.annotations.Test;
 
-import com.mgmtp.perfload.perfalyzer.util.Unzipper;
-
 /**
  * @author rnaegele
  */
-public class UnzipperTest {
+public class ArchiveExtracterTest {
 
 	@Test
 	public void testPreprocessor() throws IOException {
 		File destDir = createTempDir();
-		Unzipper proc = new Unzipper(new File("input/20111209-1153_KOMBILasttest_1h"), destDir);
-		proc.unzip();
+		ArchiveExtracter extractor = new ArchiveExtracter(new File("input/20111209-1153_KOMBILasttest_1h"), destDir);
+		extractor.extract();
 		assertThat("unzipped dir", destDir.exists(), is(true));
 		FileUtils.deleteQuietly(destDir);
 	}
