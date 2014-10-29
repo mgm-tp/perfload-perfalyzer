@@ -36,7 +36,8 @@
 			<directory>${basedir}/distribution</directory>
 			<outputDirectory>/</outputDirectory>
 			<excludes>
-				<exclude>perfalyzer.*</exclude>
+				<exclude>perfalyzer</exclude>
+				<exclude>perfalyzer.cmd</exclude>
 				<exclude>logs/*</exclude>
 				<exclude>config/PerfAlyzerConfig.groovy</exclude>
 			</excludes>
