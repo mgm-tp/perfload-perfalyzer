@@ -114,7 +114,7 @@ public class IoUtilities {
 
 		if (sourceFiles.size() > 1) {
 			// append all other files skipping headers
-			try (Writer w = Files.newWriterSupplier(destFile, charset, true).getOutput()) {
+			try (Writer w = Files.newWriter(destFile, charset)) {
 				for (PerfAlyzerFile paf : sourceFiles.subList(1, sourceFiles.size())) {
 					try (BufferedReader br = Files.newReader(new File(sourceDir, paf.getFile().getPath()), charset)) {
 
