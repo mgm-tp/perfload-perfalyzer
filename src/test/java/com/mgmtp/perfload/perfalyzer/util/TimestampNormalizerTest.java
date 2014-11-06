@@ -19,7 +19,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-import org.joda.time.DateTime;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import org.testng.annotations.Test;
 
 import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
@@ -29,8 +31,9 @@ import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
  */
 public class TimestampNormalizerTest {
 
-	private final TimestampNormalizer tn = new TimestampNormalizer(new DateTime(2012, 1, 1, 1, 1), new DateTime(), 0);
-	private final DateTime input = new DateTime(2012, 1, 1, 3, 1);
+	private final TimestampNormalizer tn =
+			new TimestampNormalizer(ZonedDateTime.of(LocalDateTime.of(2012, 1, 1, 1, 1), ZoneId.systemDefault()), ZonedDateTime.now(), 0);
+	private final ZonedDateTime input = ZonedDateTime.of(LocalDateTime.of(2012, 1, 1, 3, 1), ZoneId.systemDefault());
 
 	@Test
 	public void testWithoutOffset() {

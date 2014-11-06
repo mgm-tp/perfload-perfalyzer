@@ -15,28 +15,27 @@
  */
 package com.mgmtp.perfload.perfalyzer.normalization;
 
-import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.io.Files;
+import com.mgmtp.perfload.perfalyzer.util.LineCachingFileProcessor;
+import org.apache.commons.lang3.text.StrTokenizer;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+import java.time.ZonedDateTime;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.Set;
 
-import org.apache.commons.lang3.text.StrTokenizer;
-import org.joda.time.DateTime;
-
-import com.google.common.collect.ImmutableSet;
-import com.google.common.io.Files;
-import com.mgmtp.perfload.perfalyzer.util.LineCachingFileProcessor;
+import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
 
 /**
  * Merges a set of CVS files into a single one. The sorting is based on a timestamp column whose
  * format must be accepted by {@link DateTime#DateTime(Object)}.
- * 
+ *
  * @author ctchinda
  */
 public class DateTimeBasedCsvFileSortMerger {
@@ -47,14 +46,10 @@ public class DateTimeBasedCsvFileSortMerger {
 	private final char delimiter;
 
 	/**
-	 * @param sourceFiles
-	 *            the set of source files to be merged
-	 * @param destFile
-	 *            the destination file
-	 * @param sortColumnIndex
-	 *            the index of the timestamp column for sorting
-	 * @param delimiter
-	 *            the CSV delimiter
+	 * @param sourceFiles     the set of source files to be merged
+	 * @param destFile        the destination file
+	 * @param sortColumnIndex the index of the timestamp column for sorting
+	 * @param delimiter       the CSV delimiter
 	 */
 	public DateTimeBasedCsvFileSortMerger(final Set<File> sourceFiles, final File destFile, final int sortColumnIndex,
 			final char delimiter) {
@@ -114,11 +109,11 @@ public class DateTimeBasedCsvFileSortMerger {
 		public int compare(final LineCachingFileProcessor lineCache1, final LineCachingFileProcessor lineCache2) {
 			tokenizer.reset(lineCache1.getCachedLine());
 			String[] tokens = tokenizer.getTokenArray();
-			DateTime dtFirst = new DateTime(tokens[sortCriteriaColumn]);
+			ZonedDateTime dtFirst = ZonedDateTime.parse(tokens[sortCriteriaColumn]);
 
 			tokenizer.reset(lineCache2.getCachedLine());
 			tokens = tokenizer.getTokenArray();
-			DateTime dtSecond = new DateTime(tokens[sortCriteriaColumn]);
+			ZonedDateTime dtSecond = ZonedDateTime.parse(tokens[sortCriteriaColumn]);
 
 			return dtFirst.compareTo(dtSecond);
 		}

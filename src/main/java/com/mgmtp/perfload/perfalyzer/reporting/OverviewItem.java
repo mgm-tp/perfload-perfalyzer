@@ -15,17 +15,15 @@
  */
 package com.mgmtp.perfload.perfalyzer.reporting;
 
-import static com.google.common.base.Joiner.on;
-import static org.apache.commons.io.FilenameUtils.removeExtension;
+import com.googlecode.jatl.HtmlWriter;
+import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
 
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
-
-import com.googlecode.jatl.HtmlWriter;
-import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
+import static com.google.common.base.Joiner.on;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 /**
  * @author rnaegele
@@ -38,7 +36,7 @@ public class OverviewItem extends HtmlWriter {
 	public OverviewItem(final TestMetadata testMetadata, final ResourceBundle resourceBundle, final Locale locale) {
 		this.testMetadata = testMetadata;
 		this.resourceBundle = resourceBundle;
-		this.dateTimeFormatter = DateTimeFormat.forStyle("FF").withLocale(locale);
+		this.dateTimeFormatter = DateTimeFormatter.ISO_ZONED_DATE_TIME.withLocale(locale);
 	}
 
 	@Override
@@ -57,11 +55,11 @@ public class OverviewItem extends HtmlWriter {
 					end();
 					tr();
 						th().text(resourceBundle.getString("overview.start")).end();
-						td().text(dateTimeFormatter.print(testMetadata.getTestStart())).end();
+						td().text(dateTimeFormatter.format(testMetadata.getTestStart())).end();
 					end();
 					tr();
 						th().text(resourceBundle.getString("overview.end")).end();
-						td().text(dateTimeFormatter.print(testMetadata.getTestEnd())).end();
+						td().text(dateTimeFormatter.format(testMetadata.getTestEnd())).end();
 					end();
 					tr();
 						th().text(resourceBundle.getString("overview.duration")).end();

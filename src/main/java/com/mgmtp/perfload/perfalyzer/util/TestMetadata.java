@@ -15,25 +15,24 @@
  */
 package com.mgmtp.perfload.perfalyzer.util;
 
-import static com.google.common.base.Splitter.on;
-import static com.google.common.collect.Sets.newTreeSet;
+import com.google.common.collect.ImmutableSet;
+import org.apache.commons.lang3.time.DurationFormatUtils;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.Properties;
 import java.util.Set;
 
-import org.apache.commons.lang3.time.DurationFormatUtils;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
-
-import com.google.common.collect.ImmutableSet;
+import static com.google.common.base.Splitter.on;
+import static com.google.common.collect.Sets.newTreeSet;
 
 /**
  * @author rnaegele
  */
 public class TestMetadata {
 
-	private final DateTime testStart;
-	private final DateTime testEnd;
+	private final ZonedDateTime testStart;
+	private final ZonedDateTime testEnd;
 	private final String testDuration;
 	private final String testPlanFile;
 	private final String rawResultsDir;
@@ -41,7 +40,7 @@ public class TestMetadata {
 	private final String testComment;
 	private final Set<String> operations;
 
-	public TestMetadata(final DateTime testStart, final DateTime testEnd, final String testDuration, final String testPlanFile,
+	public TestMetadata(final ZonedDateTime testStart, final ZonedDateTime testEnd, final String testDuration, final String testPlanFile,
 			final String rawResultsDir, final String perfLoadVersion, final String testComment, final Set<String> operations) {
 		this.testStart = testStart;
 		this.testEnd = testEnd;
@@ -54,9 +53,9 @@ public class TestMetadata {
 	}
 
 	public static TestMetadata create(final String rawResultsDir, final Properties properties) {
-		DateTime start = new DateTime(properties.getProperty("test.start"));
-		DateTime end = new DateTime(properties.getProperty("test.finish"));
-		String duration = DurationFormatUtils.formatDurationHMS(new Duration(new DateTime(start), new DateTime(end)).getMillis());
+		ZonedDateTime start = ZonedDateTime.parse(properties.getProperty("test.start"));
+		ZonedDateTime end = ZonedDateTime.parse(properties.getProperty("test.finish"));
+		String duration = DurationFormatUtils.formatDurationHMS(Duration.between(start, end).toMillis());
 
 		String operationsString = properties.getProperty("operations");
 		Set<String> operations = newTreeSet(on(',').trimResults().split(operationsString));
@@ -67,14 +66,14 @@ public class TestMetadata {
 	/**
 	 * @return the testStart
 	 */
-	public DateTime getTestStart() {
+	public ZonedDateTime getTestStart() {
 		return testStart;
 	}
 
 	/**
 	 * @return the testEnd
 	 */
-	public DateTime getTestEnd() {
+	public ZonedDateTime getTestEnd() {
 		return testEnd;
 	}
 

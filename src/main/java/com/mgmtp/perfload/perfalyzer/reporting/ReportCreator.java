@@ -15,41 +15,6 @@
  */
 package com.mgmtp.perfload.perfalyzer.reporting;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Maps.newLinkedHashMap;
-import static com.google.common.io.Files.newReader;
-import static com.google.common.io.Files.newWriter;
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
-import static com.mgmtp.perfload.perfalyzer.util.PerfAlyzerUtils.extractFileNameParts;
-import static org.apache.commons.io.FileUtils.copyFile;
-import static org.apache.commons.io.FilenameUtils.getExtension;
-import static org.apache.commons.io.FilenameUtils.removeExtension;
-import static org.apache.commons.lang3.StringUtils.split;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.Writer;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.ResourceBundle;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
-import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.lang3.text.StrTokenizer;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
@@ -61,6 +26,39 @@ import com.google.common.io.Resources;
 import com.mgmtp.perfload.perfalyzer.annotations.ReportDir;
 import com.mgmtp.perfload.perfalyzer.annotations.ReportPreparationDir;
 import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.text.StrTokenizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.Writer;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.ResourceBundle;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Maps.newLinkedHashMap;
+import static com.google.common.io.Files.newReader;
+import static com.google.common.io.Files.newWriter;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
+import static com.mgmtp.perfload.perfalyzer.util.PerfAlyzerUtils.extractFileNameParts;
+import static org.apache.commons.io.FileUtils.copyFile;
+import static org.apache.commons.io.FilenameUtils.getExtension;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
+import static org.apache.commons.lang3.StringUtils.split;
 
 /**
  * @author rnaegele
@@ -176,7 +174,7 @@ public class ReportCreator {
 			perfAlyzerVersion = "";
 		}
 
-		String dateTimeString = DateTimeFormat.forStyle("FF").withLocale(locale).print(new DateTime());
+		String dateTimeString = DateTimeFormatter.ISO_ZONED_DATE_TIME.withLocale(locale).format(ZonedDateTime.now());
 		String createdString = String.format(resourceBundle.getString("footer.created"), perfAlyzerVersion, dateTimeString);
 		HtmlSkeleton html = new HtmlSkeleton(testName, createdString, navBar, overviewItem, content,
 				resourceBundle.getString("report.topLink"));
@@ -196,7 +194,7 @@ public class ReportCreator {
 			int valueColumnsCount = 0;
 
 			String fileName = file.getName();
-			for (String line = null; (line = br.readLine()) != null;) {
+			for (String line = null; (line = br.readLine()) != null; ) {
 				tokenizer.reset(line);
 
 				List<String> tokenList = tokenizer.getTokenList();
@@ -246,7 +244,7 @@ public class ReportCreator {
 			if (result == 0) {
 				result = o1.compareTo(o2);
 			}
-			log.debug("compareTo({}, {}): {}", new Object[] { priority1, priority2, result });
+			log.debug("compareTo({}, {}): {}", new Object[]{priority1, priority2, result});
 			return result;
 		}
 
@@ -259,7 +257,7 @@ public class ReportCreator {
 				Matcher matcher = pattern.matcher(s);
 				if (matcher.matches()) {
 					result = result - i;
-					log.debug("Priority match: [s={},pattern={},priority={}", new Object[] { s, pattern, result });
+					log.debug("Priority match: [s={},pattern={},priority={}", new Object[]{s, pattern, result});
 					return result; // negate, so it is sorted up in the set
 				}
 			}

@@ -15,9 +15,9 @@
  */
 package com.mgmtp.perfload.perfalyzer.reporting;
 
-import org.joda.time.DateTime;
-
 import com.googlecode.jatl.HtmlWriter;
+
+import java.time.Year;
 
 /**
  * @author rnaegele
@@ -76,7 +76,7 @@ public class HtmlSkeleton extends HtmlWriter {
 						end();
 
 						p().text(createdString).end();
-						p().raw(String.format("&copy; %d mgm technology partners GmbH", new DateTime().getYear())).end();
+						p().raw(String.format("&copy; %s mgm technology partners GmbH", Year.now())).end();
 					end();
 				end();
 			end();

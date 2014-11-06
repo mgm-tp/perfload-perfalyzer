@@ -15,25 +15,6 @@
  */
 package com.mgmtp.perfload.perfalyzer.reportpreparation;
 
-import static com.google.common.collect.Lists.newArrayListWithCapacity;
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
-import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
-import static org.apache.commons.io.FileUtils.writeLines;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.text.NumberFormat;
-import java.text.ParseException;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ResourceBundle;
-
-import org.apache.commons.lang3.text.StrBuilder;
-import org.joda.time.DateTime;
-
 import com.google.common.base.Charsets;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.NumberDataSet.SeriesPoint;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator.AxisType;
@@ -48,6 +29,23 @@ import com.tagtraum.perf.gcviewer.imp.DataReaderFactory;
 import com.tagtraum.perf.gcviewer.math.IntData;
 import com.tagtraum.perf.gcviewer.model.GCEvent;
 import com.tagtraum.perf.gcviewer.model.GCModel;
+import org.apache.commons.lang3.text.StrBuilder;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.time.ZonedDateTime;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ResourceBundle;
+
+import static com.google.common.collect.Lists.newArrayListWithCapacity;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
+import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
+import static org.apache.commons.io.FileUtils.writeLines;
 
 /**
  * @author ctchinda
@@ -81,21 +79,22 @@ public class GcLogReportPreparationStrategy extends AbstractReportPreparationStr
 				continue;
 			}
 
-			GCModel model = new GCModel(origModel.isCountTenuredAsFull());
+			GCModel model = new GCModel();
 			model.setFormat(origModel.getFormat());
 
-			for (Iterator<GCEvent> it = origModel.getGCEvents(); it.hasNext();) {
+			for (Iterator<GCEvent> it = origModel.getGCEvents(); it.hasNext(); ) {
 				GCEvent event = it.next();
-				Date datestamp = event.getDatestamp();
+				ZonedDateTime datestamp = event.getDatestamp();
 				if (datestamp == null) {
 					// we assume there are generally no datestamps if the first event does not have one
 					log.error("Unsupported GC log format. Please activate date stamp logging (-XX:+PrintGCDateStamps for Oracle JDK).");
 					break;
 				}
 
-				DateTime timestamp = new DateTime(datestamp);
-				if (timestampNormalizer.isInRange(timestamp)) {
+				if (timestampNormalizer.isInRange(datestamp)) {
 					model.add(event);
+				} else {
+					log.debug(event.toString());
 				}
 			}
 
@@ -103,9 +102,9 @@ public class GcLogReportPreparationStrategy extends AbstractReportPreparationStr
 				NumberDataSet dataSetHeap = new NumberDataSet();
 				NumberDataSet dataSetGcTimes = new NumberDataSet();
 
-				for (Iterator<GCEvent> it = model.getGCEvents(); it.hasNext();) {
+				for (Iterator<GCEvent> it = model.getGCEvents(); it.hasNext(); ) {
 					GCEvent event = it.next();
-					DateTime timestamp = new DateTime(event.getDatestamp());
+					ZonedDateTime timestamp = event.getDatestamp();
 					long seconds = timestampNormalizer.normalizeTimestamp(timestamp, 0L) / 1000;
 
 					dataSetHeap.addSeriesPoint("total", new SeriesPoint(seconds, event.getTotal() / 1024));
@@ -156,24 +155,24 @@ public class GcLogReportPreparationStrategy extends AbstractReportPreparationStr
 		appendEscapedAndQuoted(sb, DELIMITER, memoryFormat.format(model.getFreedMemory()));
 		appendEscapedAndQuoted(sb, DELIMITER, memoryFormat.format(model.getFreedMemory() / model.getRunningTime() * 60.0));
 		appendEscapedAndQuoted(sb, DELIMITER, model.hasCorrectTimestamp()
-				? floatNumberFormat.format(model.getPause().getSum()) + " s"
-				: "n/a");
+											  ? floatNumberFormat.format(model.getPause().getSum()) + " s"
+											  : "n/a");
 		appendEscapedAndQuoted(sb, DELIMITER, model.getFullGCPause().getN() > 0
-				? intNumberFormat.format(model.getFullGCPause().getMin()) + " s / "
-						+ intNumberFormat.format(model.getFullGCPause().getMax()) + " s"
-				: "n/a");
+											  ? intNumberFormat.format(model.getFullGCPause().getMin()) + " s / "
+													  + intNumberFormat.format(model.getFullGCPause().getMax()) + " s"
+											  : "n/a");
 		appendEscapedAndQuoted(sb, DELIMITER, model.hasCorrectTimestamp()
-				? floatNumberFormat.format(model.getThroughput()) + " %"
-				: "n/a");
+											  ? floatNumberFormat.format(model.getThroughput()) + " %"
+											  : "n/a");
 		appendEscapedAndQuoted(sb, DELIMITER, model.getFullGCPause().getN() > 0
-				? intNumberFormat.format(model.getFullGCPause().getN())
-				: "n/a");
+											  ? intNumberFormat.format(model.getFullGCPause().getN())
+											  : "n/a");
 		appendEscapedAndQuoted(sb, DELIMITER, model.getFullGCPause().getN() > 0
-				? memoryFormat.format(model.getFreedMemoryByFullGC().getSum() / model.getFullGCPause().getSum()) + "/s"
-				: "n/a");
+											  ? memoryFormat.format(model.getFreedMemoryByFullGC().getSum() / model.getFullGCPause().getSum()) + "/s"
+											  : "n/a");
 		appendEscapedAndQuoted(sb, DELIMITER, model.getGCPause().getN() > 0
-				? memoryFormat.format(model.getFreedMemoryByGC().getSum() / model.getGCPause().getSum()) + "/s"
-				: "n/a");
+											  ? memoryFormat.format(model.getFreedMemoryByGC().getSum() / model.getGCPause().getSum()) + "/s"
+											  : "n/a");
 		gcLines.add(sb);
 	}
 

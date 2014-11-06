@@ -16,7 +16,7 @@
 package com.mgmtp.perfload.perfalyzer.binning;
 
 import org.apache.commons.lang3.mutable.MutableLong;
-import org.joda.time.Duration;
+import java.time.Duration;
 
 /**
  * Encapsulates the actual binning logic.
@@ -78,8 +78,7 @@ public abstract class BinManager {
 			starting = false;
 		}
 
-		Duration duration = new Duration(lastBinStartMillis, timestampMillis);
-		long durationMillis = duration.getMillis();
+		long durationMillis = timestampMillis - lastBinStartMillis;
 		if (durationMillis >= binSize) {
 			int factor = (int) durationMillis / binSize;
 			for (int i = 0; i < factor; ++i) {

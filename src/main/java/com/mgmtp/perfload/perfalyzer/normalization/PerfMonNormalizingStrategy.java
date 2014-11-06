@@ -27,7 +27,7 @@ import java.util.regex.Matcher;
 
 import org.apache.commons.lang3.text.StrBuilder;
 import org.apache.commons.lang3.text.StrTokenizer;
-import org.joda.time.DateTime;
+import java.time.ZonedDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,9 +64,9 @@ public class PerfMonNormalizingStrategy implements NormalizingStrategy {
 		List<String> tokenList = tokenizer.getTokenList();
 
 		List<ChannelData> result = newArrayListWithExpectedSize(3);
-		DateTime timestamp = null;
+		ZonedDateTime timestamp = null;
 		try {
-			timestamp = new DateTime(tokenList.get(0));
+			timestamp = ZonedDateTime.parse(tokenList.get(0));
 		} catch (IllegalArgumentException ex) {
 			log.error("Invalid data line: {}", line);
 			return result;

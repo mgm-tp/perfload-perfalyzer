@@ -15,11 +15,15 @@
  */
 package com.mgmtp.perfload.perfalyzer.binning;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Lists.newArrayListWithExpectedSize;
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
-import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
-import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
+import com.google.common.base.Charsets;
+import com.google.common.primitives.Doubles;
+import com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants;
+import com.mgmtp.perfload.perfalyzer.util.ChannelManager;
+import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
+import com.mgmtp.perfload.perfalyzer.util.PerfMonTypeConfig;
+import org.apache.commons.lang3.text.StrBuilder;
+import org.apache.commons.math3.stat.StatUtils;
+import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
@@ -28,21 +32,15 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 
-import org.apache.commons.lang3.text.StrBuilder;
-import org.apache.commons.math3.stat.StatUtils;
-import org.apache.commons.math3.stat.descriptive.rank.Percentile;
-import org.joda.time.Duration;
-
-import com.google.common.base.Charsets;
-import com.google.common.primitives.Doubles;
-import com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants;
-import com.mgmtp.perfload.perfalyzer.util.ChannelManager;
-import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
-import com.mgmtp.perfload.perfalyzer.util.PerfMonTypeConfig;
+import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Lists.newArrayListWithExpectedSize;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
+import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
+import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
 
 /**
  * Binning implementation for perfMon logs.
- * 
+ *
  * @author rnaegele
  */
 public class PerfMonBinningStrategy extends AbstractBinningStrategy {
@@ -86,8 +84,8 @@ public class PerfMonBinningStrategy extends AbstractBinningStrategy {
 				// save for aggregation
 				valuesForAggregation.add(value);
 
-				Duration duration = new Duration(lastBinStartMillis, timestampMillis);
-				if (duration.getMillis() > PerfAlyzerConstants.BIN_SIZE_MILLIS_30_SECONDS) {
+				long duration = timestampMillis - lastBinStartMillis;
+				if (duration > PerfAlyzerConstants.BIN_SIZE_MILLIS_30_SECONDS) {
 					lastBinStartMillis = timestampMillis;
 					writeBinnedLine(binValues, binIndex++, destChannel);
 					binValues.clear();

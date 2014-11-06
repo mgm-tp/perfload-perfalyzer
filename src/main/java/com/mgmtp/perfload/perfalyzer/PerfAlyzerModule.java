@@ -15,41 +15,6 @@
  */
 package com.mgmtp.perfload.perfalyzer;
 
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Lists.newArrayListWithCapacity;
-import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadIntoProperties;
-import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadProperties;
-import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.saveProperties;
-import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.setIfNonNull;
-import static org.apache.commons.io.FileUtils.deleteDirectory;
-import groovy.util.ConfigObject;
-import groovy.util.ConfigSlurper;
-
-import java.io.File;
-import java.io.IOException;
-import java.math.RoundingMode;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.ResourceBundle;
-import java.util.ResourceBundle.Control;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.inject.Singleton;
-import javax.mail.Authenticator;
-import javax.mail.PasswordAuthentication;
-
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
@@ -93,6 +58,39 @@ import com.mgmtp.perfload.perfalyzer.workflow.MeasuringWorkflow;
 import com.mgmtp.perfload.perfalyzer.workflow.PerfMonWorkflow;
 import com.mgmtp.perfload.perfalyzer.workflow.Workflow;
 import com.mgmtp.perfload.perfalyzer.workflow.WorkflowExecutor;
+import groovy.util.ConfigObject;
+import groovy.util.ConfigSlurper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Singleton;
+import javax.mail.Authenticator;
+import javax.mail.PasswordAuthentication;
+import java.io.File;
+import java.io.IOException;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.ResourceBundle;
+import java.util.ResourceBundle.Control;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Lists.newArrayListWithCapacity;
+import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadIntoProperties;
+import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadProperties;
+import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.saveProperties;
+import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.setIfNonNull;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 
 /**
  * @author rnaegele
@@ -105,8 +103,13 @@ public class PerfAlyzerModule extends AbstractModule {
 	private final PerfAlyzerArgs args;
 
 	public PerfAlyzerModule(final PerfAlyzerArgs args) {
-		checkState(args.inputDir.isDirectory(), "'inputDir' does not exist or is not a directory: %s", args.inputDir);
+		checkState(!args.unzip || args.inputDir.isDirectory(), "'inputDir' does not exist or is not a directory: %s", args.inputDir);
 		this.args = args;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static <T> T get(final ConfigObject configObject, final String key) {
+		return (T) configObject.get(key);
 	}
 
 	@Override
@@ -322,11 +325,6 @@ public class PerfAlyzerModule extends AbstractModule {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private static <T> T get(final ConfigObject configObject, final String key) {
-		return (T) configObject.get(key);
-	}
-
 	@Provides
 	@IntFormat
 	NumberFormat provideIntFormat(final Locale locale) {
@@ -355,8 +353,8 @@ public class PerfAlyzerModule extends AbstractModule {
 	@Provides
 	@Singleton
 	TimestampNormalizer provideTimestampNormalizer(final TestMetadata testMetadata, @WarmUpSeconds final int warmUpSeconds) {
-		DateTime testStartDate = new DateTime(testMetadata.getTestStart());
-		DateTime testEndDate = new DateTime(testMetadata.getTestEnd());
+		ZonedDateTime testStartDate = testMetadata.getTestStart();
+		ZonedDateTime testEndDate = testMetadata.getTestEnd();
 		return new TimestampNormalizer(testStartDate, testEndDate, warmUpSeconds);
 	}
 

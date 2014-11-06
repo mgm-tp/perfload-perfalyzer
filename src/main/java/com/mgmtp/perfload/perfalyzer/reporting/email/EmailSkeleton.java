@@ -15,29 +15,27 @@
  */
 package com.mgmtp.perfload.perfalyzer.reporting.email;
 
-import static com.google.common.base.Joiner.on;
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
+import com.googlecode.jatl.HtmlWriter;
+import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
+import org.apache.commons.lang3.SystemUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.ResourceBundle;
 
-import org.apache.commons.lang3.SystemUtils;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
-import com.googlecode.jatl.HtmlWriter;
-import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
+import static com.google.common.base.Joiner.on;
 
 /**
  * Encapsulates HTML creation for the e-mail report.
- * 
+ *
  * @author rnaegele
  */
 public class EmailSkeleton extends HtmlWriter {
@@ -58,7 +56,7 @@ public class EmailSkeleton extends HtmlWriter {
 		this.data = data;
 		this.comparisonData = comparisonData;
 		this.linkToReport = linkToReport;
-		this.dateTimeFormatter = DateTimeFormat.forStyle("FF").withLocale(locale);
+		this.dateTimeFormatter = DateTimeFormatter.ISO_ZONED_DATE_TIME.withLocale(locale);
 	}
 
 	@Override
@@ -94,11 +92,11 @@ public class EmailSkeleton extends HtmlWriter {
 								end();
 								tr();
 									th().text(resourceBundle.getString("overview.start")).end();
-									td().text(dateTimeFormatter.print(testMetadata.getTestStart())).end();
+									td().text(dateTimeFormatter.format(testMetadata.getTestStart())).end();
 								end();
 								tr();
 									th().text(resourceBundle.getString("overview.end")).end();
-									td().text(dateTimeFormatter.print(testMetadata.getTestEnd())).end();
+									td().text(dateTimeFormatter.format(testMetadata.getTestEnd())).end();
 								end();
 								tr();
 									th().text(resourceBundle.getString("overview.duration")).end();

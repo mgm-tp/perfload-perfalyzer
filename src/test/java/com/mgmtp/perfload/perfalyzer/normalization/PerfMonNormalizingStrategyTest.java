@@ -15,27 +15,23 @@
  */
 package com.mgmtp.perfload.perfalyzer.normalization;
 
+import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
+import com.google.common.io.Resources;
+import com.mgmtp.perfload.perfalyzer.util.ChannelData;
+import com.mgmtp.perfload.perfalyzer.util.Marker;
+import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
+import org.testng.annotations.Test;
+
+import java.io.IOException;
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Map;
+
 import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 import static com.mgmtp.perfload.perfalyzer.hamcrest.RegexMatchers.matches;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-
-import org.joda.time.DateTime;
-import org.testng.annotations.Test;
-
-import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableList;
-import com.google.common.io.Resources;
-import com.mgmtp.perfload.perfalyzer.normalization.NormalizationException;
-import com.mgmtp.perfload.perfalyzer.normalization.NormalizingStrategy;
-import com.mgmtp.perfload.perfalyzer.normalization.PerfMonNormalizingStrategy;
-import com.mgmtp.perfload.perfalyzer.util.ChannelData;
-import com.mgmtp.perfload.perfalyzer.util.Marker;
-import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
 
 /**
  * @author rnaegele
@@ -59,8 +55,8 @@ public class PerfMonNormalizingStrategyTest {
 	public void testNormalization() throws IOException, NormalizationException {
 		List<String> perfMonLines = Resources.readLines(Resources.getResource("normalization/perfmon.out"), Charsets.UTF_8);
 
-		NormalizingStrategy strategy = new PerfMonNormalizingStrategy(new TimestampNormalizer(new DateTime(
-				"2011-12-09T11:54:15.335+01:00"), new DateTime(), 0), ImmutableList.<Marker>of());
+		NormalizingStrategy strategy = new PerfMonNormalizingStrategy(new TimestampNormalizer(ZonedDateTime.parse(
+				"2011-12-09T11:54:15.335+01:00"), ZonedDateTime.now(), 0), ImmutableList.<Marker>of());
 
 		boolean firstLine = true;
 		for (String line : perfMonLines) {

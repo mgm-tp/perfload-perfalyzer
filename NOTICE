@@ -7,13 +7,11 @@ mgm perfLoad perfAlyzer
 Copyright 2013-2014 mgm technology partners GmbH
 
 From: 'an unknown organization'
-  - AntLR Parser Generator (http://www.antlr.org/) antlr:antlr:jar:2.7.7
-    License: BSD License  (http://www.antlr.org/license.html)
   - AOP alliance (http://aopalliance.sourceforge.net) aopalliance:aopalliance:jar:1.0
     License: Public Domain 
   - JCommander (http://beust.com/jcommander) com.beust:jcommander:jar:1.35
     License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
-  - GCViewer (http://github.com/chewiebug/GCViewer/wiki) com.github.chewiebug:gcviewer:jar:1.33
+  - GCViewer (http://github.com/chewiebug/GCViewer/wiki) com.github.chewiebug:gcviewer:jar:1.34-SNAPSHOT
     License: GNU Lesser General Public License 2.1  (http://www.gnu.org/licenses/lgpl.txt)
   - FindBugs-jsr305 (http://findbugs.sourceforge.net/) com.google.code.findbugs:jsr305:jar:3.0.0
     License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
@@ -44,22 +42,6 @@ From: 'JFree.org' (http://www.jfree.org/)
   - JFreeChart (http://www.jfree.org/jfreechart/) org.jfree:jfreechart:jar:1.0.19
     License: GNU Lesser General Public Licence  (http://www.gnu.org/licenses/lgpl.txt)
 
-From: 'Joda.org' (http://www.joda.org)
-  - Joda-Time (http://www.joda.org/joda-time/) joda-time:joda-time:jar:2.5
-    License: Apache 2  (http://www.apache.org/licenses/LICENSE-2.0.txt)
-
-From: 'ObjectWeb' (http://www.objectweb.org/)
-  - ASM Core (http://asm.objectweb.org/asm/) org.ow2.asm:asm:jar:4.0
-    License: BSD  (http://asm.objectweb.org/license.html)
-  - ASM Analysis (http://asm.objectweb.org/asm-analysis/) org.ow2.asm:asm-analysis:jar:4.0
-    License: BSD  (http://asm.objectweb.org/license.html)
-  - ASM Commons (http://asm.objectweb.org/asm-commons/) org.ow2.asm:asm-commons:jar:4.0
-    License: BSD  (http://asm.objectweb.org/license.html)
-  - ASM Tree (http://asm.objectweb.org/asm-tree/) org.ow2.asm:asm-tree:jar:4.0
-    License: BSD  (http://asm.objectweb.org/license.html)
-  - ASM Util (http://asm.objectweb.org/asm-util/) org.ow2.asm:asm-util:jar:4.0
-    License: BSD  (http://asm.objectweb.org/license.html)
-
 From: 'Oracle' (http://www.oracle.com)
   - JavaMail API (compat) (http://kenai.com/projects/javamail/mail) javax.mail:mail:jar:1.5.0-b01
     License: CDDL  (http://www.sun.com/cddl)
@@ -88,7 +70,7 @@ From: 'The Apache Software Foundation' (http://www.apache.org/)
     License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
 
 From: 'The Codehaus' (http://codehaus.org)
-  - Groovy (http://groovy.codehaus.org/) org.codehaus.groovy:groovy:jar:2.0.5
+  - Groovy (http://groovy.codehaus.org/) org.codehaus.groovy:groovy:jar:2.3.4
     License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
 
 
