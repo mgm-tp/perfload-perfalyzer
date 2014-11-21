@@ -20,6 +20,7 @@ import org.apache.commons.lang3.time.DurationFormatUtils;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 import java.util.Set;
 
@@ -53,8 +54,8 @@ public class TestMetadata {
 	}
 
 	public static TestMetadata create(final String rawResultsDir, final Properties properties) {
-		ZonedDateTime start = ZonedDateTime.parse(properties.getProperty("test.start"));
-		ZonedDateTime end = ZonedDateTime.parse(properties.getProperty("test.finish"));
+		ZonedDateTime start = ZonedDateTime.parse(properties.getProperty("test.start"), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+		ZonedDateTime end = ZonedDateTime.parse(properties.getProperty("test.finish"), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 		String duration = DurationFormatUtils.formatDurationHMS(Duration.between(start, end).toMillis());
 
 		String operationsString = properties.getProperty("operations");

@@ -36,7 +36,7 @@ public class OverviewItem extends HtmlWriter {
 	public OverviewItem(final TestMetadata testMetadata, final ResourceBundle resourceBundle, final Locale locale) {
 		this.testMetadata = testMetadata;
 		this.resourceBundle = resourceBundle;
-		this.dateTimeFormatter = DateTimeFormatter.ISO_ZONED_DATE_TIME.withLocale(locale);
+		this.dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME.withLocale(locale);
 	}
 
 	@Override

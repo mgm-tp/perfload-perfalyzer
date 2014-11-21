@@ -56,7 +56,7 @@ public class EmailSkeleton extends HtmlWriter {
 		this.data = data;
 		this.comparisonData = comparisonData;
 		this.linkToReport = linkToReport;
-		this.dateTimeFormatter = DateTimeFormatter.ISO_ZONED_DATE_TIME.withLocale(locale);
+		this.dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME.withLocale(locale);
 	}
 
 	@Override
