@@ -40,6 +40,8 @@
 				<exclude>perfalyzer.cmd</exclude>
 				<exclude>logs/*</exclude>
 				<exclude>config/PerfAlyzerConfig.groovy</exclude>
+				<exclude>assets/stylesheets/perfload.css.map</exclude>
+				<exclude>assets/stylesheets/.gitkeep</exclude>
 			</excludes>
 		</fileSet>
 	</fileSets>

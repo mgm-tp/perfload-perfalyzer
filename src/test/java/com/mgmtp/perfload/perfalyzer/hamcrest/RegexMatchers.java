@@ -32,7 +32,7 @@ public final class RegexMatchers {
 		// don't allow instantiation
 	}
 
-	private static abstract class BaseRegexMatcher extends TypeSafeMatcher<String> {
+	private abstract static class BaseRegexMatcher extends TypeSafeMatcher<String> {
 		protected final String regex;
 		protected final Pattern compiledRegex;
 

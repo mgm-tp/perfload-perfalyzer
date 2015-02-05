@@ -15,10 +15,31 @@
  */
 package com.mgmtp.perfload.perfalyzer.binning;
 
+import com.google.common.base.Charsets;
+import com.google.common.primitives.Doubles;
+import com.google.common.primitives.Longs;
+import com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants;
+import com.mgmtp.perfload.perfalyzer.util.AggregationType;
+import com.mgmtp.perfload.perfalyzer.util.ChannelManager;
+import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
+import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.commons.lang3.mutable.MutableLong;
+import org.apache.commons.lang3.text.StrBuilder;
+import org.apache.commons.math3.stat.StatUtils;
+import org.apache.commons.math3.stat.descriptive.rank.Percentile;
+
+import java.io.IOException;
+import java.nio.channels.WritableByteChannel;
+import java.text.NumberFormat;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Scanner;
+import java.util.Set;
+
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
-import static com.google.common.collect.Lists.newArrayListWithExpectedSize;
 import static com.google.common.collect.Maps.newHashMap;
 import static com.google.common.collect.Maps.newTreeMap;
 import static com.google.common.collect.Sets.newHashSet;
@@ -31,35 +52,11 @@ import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
 import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
 import static org.apache.commons.lang3.StringUtils.leftPad;
 
-import java.io.IOException;
-import java.nio.channels.WritableByteChannel;
-import java.text.NumberFormat;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Scanner;
-import java.util.Set;
-
-import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.commons.lang3.mutable.MutableLong;
-import org.apache.commons.lang3.text.StrBuilder;
-import org.apache.commons.math3.stat.StatUtils;
-import org.apache.commons.math3.stat.descriptive.rank.Percentile;
-
-import com.google.common.base.Charsets;
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
-import com.google.common.primitives.Doubles;
-import com.google.common.primitives.Longs;
-import com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants;
-import com.mgmtp.perfload.perfalyzer.util.ChannelManager;
-import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
-
 /**
  * Binning implementation for measuring logs.
- * 
+ *
  * @author ctchinda
+ * @author rnaegele
  */
 public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrategy {
 
@@ -67,14 +64,13 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 	private final Map<String, ExecutionMeasurings> perExecutionResponseTimes = newHashMap();
 	private final Set<String> errorExecutions = newHashSet();
 
-	public MeasuringResponseTimesBinningStrategy(final NumberFormat intNumberFormat,
+	public MeasuringResponseTimesBinningStrategy(final long startOfFirstBin, final NumberFormat intNumberFormat,
 			final NumberFormat floatNumberFormat) {
-		super(intNumberFormat, floatNumberFormat);
+		super(startOfFirstBin, intNumberFormat, floatNumberFormat);
 	}
 
 	@Override
 	public void binData(final Scanner scanner, final WritableByteChannel destChannel) throws IOException {
-
 		while (scanner.hasNextLine()) {
 			tokenizer.reset(scanner.nextLine());
 			String[] tokens = tokenizer.getTokenArray();
@@ -183,36 +179,24 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 
 		writeExecutionAggregatedResponseTimesHeader(channelManager.getChannel("aggregatedResponseTimes"));
 		if (!perExecutionResponseTimes.isEmpty()) {
-			BinManager executionsPerMinuteBinManager = new ChannelBinManager(PerfAlyzerConstants.BIN_SIZE_MILLIS_1_MINUTE,
-					channelManager.getChannel("execMin"), "time", "count", intNumberFormat);
-			BinManager executionsPerTenMinutesBinManager = new ChannelBinManager(PerfAlyzerConstants.BIN_SIZE_MILLIS_10_MINUTES,
-					channelManager.getChannel("exec10Min"), "time", "count", intNumberFormat);
-			MedianBinManager medianExecutionBinManager = new MedianBinManager(PerfAlyzerConstants.BIN_SIZE_MILLIS_30_SECONDS,
-					channelManager.getChannel("executions"), "time", "median", intNumberFormat);
+			BinManager executionsPerMinuteBinManager = new BinManager(startOfFirstBin, PerfAlyzerConstants.BIN_SIZE_MILLIS_1_MINUTE);
+			BinManager executionsPerTenMinutesBinManager = new BinManager(startOfFirstBin, PerfAlyzerConstants.BIN_SIZE_MILLIS_10_MINUTES);
+			BinManager medianExecutionBinManager = new BinManager(startOfFirstBin, PerfAlyzerConstants.BIN_SIZE_MILLIS_30_SECONDS);
 
 			List<ExecutionMeasurings> values = newArrayList(perExecutionResponseTimes.values());
-			Collections.sort(values);
 
 			for (ExecutionMeasurings execMeasurings : values) {
-				medianExecutionBinManager.addBinValue(execMeasurings.sumResponseTimes.doubleValue() / 1000);
-
 				long timestampMillis = execMeasurings.timestampMillis;
-				executionsPerMinuteBinManager.addTimestamp(timestampMillis);
-				executionsPerTenMinutesBinManager.addTimestamp(timestampMillis);
-				medianExecutionBinManager.addTimestamp(timestampMillis);
+				executionsPerMinuteBinManager.addValue(timestampMillis);
+				executionsPerTenMinutesBinManager.addValue(timestampMillis);
+				medianExecutionBinManager.addValue(timestampMillis, execMeasurings.sumResponseTimes.doubleValue() / 1000);
 			}
 
-			executionsPerMinuteBinManager.completeLastBin();
-			executionsPerTenMinutesBinManager.completeLastBin();
-			medianExecutionBinManager.completeLastBin();
+			executionsPerMinuteBinManager.toCsv(channelManager.getChannel("execMin"), "time", "count", intNumberFormat);
+			executionsPerTenMinutesBinManager.toCsv(channelManager.getChannel("exec10Min"), "time", "count", intNumberFormat);
+			medianExecutionBinManager.toCsv(channelManager.getChannel("executions"), "time", "median", intNumberFormat, AggregationType.MEDIAN);
 
-			double[] sumResponseTimes = Doubles.toArray(Collections2.transform(values,
-					new Function<ExecutionMeasurings, Double>() {
-						@Override
-						public Double apply(final ExecutionMeasurings input) {
-							return input.sumResponseTimes.doubleValue();
-						}
-					}));
+			double[] sumResponseTimes = values.stream().mapToDouble(input -> input.sumResponseTimes.doubleValue()).toArray();
 
 			StrBuilder sb = new StrBuilder(150);
 			appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(Doubles.min(sumResponseTimes) / 1000));
@@ -275,41 +259,6 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 		@Override
 		public int compareTo(final ExecutionMeasurings other) {
 			return Longs.compare(timestampMillis, other.timestampMillis);
-		}
-	}
-
-	static class MedianBinManager extends ChannelBinManager {
-
-		private List<Double> binValues;
-		private boolean completingLastBin;
-
-		public MedianBinManager(final int binSize, final WritableByteChannel destChannel, final String header1,
-				final String header2, final NumberFormat numberFormat) {
-			super(binSize, destChannel, header1, header2, numberFormat);
-		}
-
-		public void addBinValue(final double seconds) {
-			if (binValues == null) {
-				binValues = newArrayListWithExpectedSize(42);
-			}
-			binValues.add(seconds);
-		}
-
-		@Override
-		protected void binCompleted(final int bin, final long counter) {
-			if (starting || completingLastBin) {
-				formatAndWriteToChannel(bin, counter);
-			} else if (!binValues.isEmpty()) {
-				double median = StatUtils.percentile(Doubles.toArray(binValues), 50d);
-				formatAndWriteToChannel(bin, median);
-				binValues.clear();
-			}
-		}
-
-		@Override
-		public void completeLastBin() {
-			completingLastBin = true;
-			super.completeLastBin();
 		}
 	}
 }

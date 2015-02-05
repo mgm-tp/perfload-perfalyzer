@@ -15,34 +15,34 @@
  */
 package com.mgmtp.perfload.perfalyzer.binning;
 
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_REQUEST_TYPE;
+import com.mgmtp.perfload.perfalyzer.util.ChannelManager;
+import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
 import java.text.NumberFormat;
 import java.util.Scanner;
 
-import com.mgmtp.perfload.perfalyzer.util.ChannelManager;
-import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_REQUEST_TYPE;
 
 /**
  * Binning implementation for measuring logs.
- * 
+ *
  * @author ctchinda
  */
 public class MeasuringRequestsBinningStrategy extends AbstractBinningStrategy {
 
 	private final int binSize;
 
-	public MeasuringRequestsBinningStrategy(final int binSize, final NumberFormat intNumberFormat,
+	public MeasuringRequestsBinningStrategy(final long startOfFirstBin, final int binSize, final NumberFormat intNumberFormat,
 			final NumberFormat floatNumberFormat) {
-		super(intNumberFormat, floatNumberFormat);
+		super(startOfFirstBin, intNumberFormat, floatNumberFormat);
 		this.binSize = binSize;
 	}
 
 	@Override
 	public void binData(final Scanner scanner, final WritableByteChannel destChannel) throws IOException {
-		BinManager binManager = new ChannelBinManager(binSize, destChannel, "seconds", "count", intNumberFormat);
+		BinManager binManager = new BinManager(startOfFirstBin, binSize); // new ChannelBinManager(binSize, destChannel, "seconds", "count", intNumberFormat);
 
 		while (scanner.hasNextLine()) {
 			tokenizer.reset(scanner.nextLine());
@@ -51,10 +51,10 @@ public class MeasuringRequestsBinningStrategy extends AbstractBinningStrategy {
 				continue;
 			}
 			long timestampMillis = Long.parseLong(tokens[0]);
-			binManager.addTimestamp(timestampMillis);
+			binManager.addValue(timestampMillis);
 		}
 
-		binManager.completeLastBin();
+		binManager.toCsv(destChannel, "seconds", "count", intNumberFormat);
 	}
 
 	@Override

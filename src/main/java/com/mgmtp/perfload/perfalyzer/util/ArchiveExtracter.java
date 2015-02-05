@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
  * @author rnaegele
  */
 public class ArchiveExtracter extends DirectoryWalker<File> {
-	private static final Pattern ARCHIVE_PATTERN = Pattern.compile("\\.(zip|tar\\.gz|tgz)$");
+	private static final Pattern ARCHIVE_PATTERN = Pattern.compile("\\.(?:zip|tar\\.gz|tgz)$");
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -96,7 +96,7 @@ public class ArchiveExtracter extends DirectoryWalker<File> {
 			log.debug("Extracting file: {}", file);
 
 			try {
-				String extension = matcher.group(1);
+				String extension = matcher.group();
 				String baseName = StringUtils.substringBeforeLast(fileName, extension);
 				Archiver archiver = ArchiverFactory.createArchiver(file);
 				archiver.extract(file, new File(targetDir, baseName));

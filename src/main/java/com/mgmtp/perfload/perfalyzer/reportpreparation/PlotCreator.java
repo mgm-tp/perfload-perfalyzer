@@ -15,11 +15,31 @@
  */
 package com.mgmtp.perfload.perfalyzer.reportpreparation;
 
-import static com.google.common.io.Files.createParentDirs;
-import static com.mgmtp.perfload.perfalyzer.util.PerfAlyzerUtils.selectDisplayData;
+import com.mgmtp.perfload.perfalyzer.annotations.IntFormat;
+import com.mgmtp.perfload.perfalyzer.util.Marker;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.StandardChartTheme;
+import org.jfree.chart.axis.LogarithmicAxis;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.block.LineBorder;
+import org.jfree.chart.plot.CombinedDomainXYPlot;
+import org.jfree.chart.plot.DefaultDrawingSupplier;
+import org.jfree.chart.plot.IntervalMarker;
+import org.jfree.chart.plot.Plot;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYItemRenderer;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.chart.title.LegendTitle;
+import org.jfree.ui.Layer;
+import org.jfree.ui.RectangleAnchor;
+import org.jfree.ui.RectangleInsets;
 
+import javax.imageio.ImageIO;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.GradientPaint;
 import java.awt.Polygon;
 import java.awt.Shape;
@@ -33,24 +53,8 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.ResourceBundle;
 
-import javax.imageio.ImageIO;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.StandardChartTheme;
-import org.jfree.chart.axis.LogarithmicAxis;
-import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.block.LineBorder;
-import org.jfree.chart.plot.CombinedDomainXYPlot;
-import org.jfree.chart.plot.DefaultDrawingSupplier;
-import org.jfree.chart.plot.Plot;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.XYItemRenderer;
-import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.chart.title.LegendTitle;
-
-import com.mgmtp.perfload.perfalyzer.annotations.IntFormat;
+import static com.google.common.io.Files.createParentDirs;
+import static com.mgmtp.perfload.perfalyzer.util.PerfAlyzerUtils.selectDisplayData;
 
 /**
  * @author rnaegele
@@ -94,8 +98,8 @@ public class PlotCreator {
 
 	public static enum ChartDimensions {
 		DEFAULT(640, 400),
-		LARGE(1125, 800),
-		WIDE(1125, 400);
+		LARGE(1115, 800),
+		WIDE(1115, 400);
 
 		private final int width;
 		private final int height;
@@ -123,21 +127,23 @@ public class PlotCreator {
 	private final NumberFormat numberFormat;
 	private final ResourceBundle resourceBundle;
 	private final List<DisplayData> displayDataList;
+	private final List<Marker> markers;
 
 	@Inject
 	public PlotCreator(@IntFormat final NumberFormat numberFormat, final ResourceBundle resourceBundle,
-			final List<DisplayData> displayDataList) {
+			final List<DisplayData> displayDataList, final List<Marker> markers) {
 		this.numberFormat = numberFormat;
 		this.resourceBundle = resourceBundle;
 		this.displayDataList = displayDataList;
+		this.markers = markers;
 	}
 
 	public JFreeChart createPlot(final AxisType xAxisType, final AxisType yAxisType, final RendererType rendererType,
-			final DisplayData displayData, final NumberDataSet... dataSets) {
+			final DisplayData displayData, final DataRange dataRange, boolean showMarkers, final NumberDataSet... dataSets) {
 
 		NumberAxis xAxis = createAxis(xAxisType, resourceBundle.getString(displayData.getUnitX()));
 
-		Plot plot;
+		XYPlot plot;
 		if (dataSets.length == 1) {
 			NumberAxis yAxis = createAxis(yAxisType, resourceBundle.getString(displayData.getUnitY()));
 			plot = new XYPlot(dataSets[0], xAxis, yAxis, rendererType.createRenderer());
@@ -145,6 +151,7 @@ public class PlotCreator {
 			CombinedDomainXYPlot combinedPlot = new CombinedDomainXYPlot(xAxis);
 			for (int i = 0; i < dataSets.length; ++i) {
 				NumberDataSet dataSet = dataSets[i];
+				// no range for y-axis!
 				NumberAxis yAxis = createAxis(yAxisType, resourceBundle.getString(displayData.getUnitYList().get(i)));
 				XYPlot subPlot = new XYPlot(dataSet, null, yAxis, rendererType.createRenderer());
 				combinedPlot.add(subPlot);
@@ -158,16 +165,38 @@ public class PlotCreator {
 
 		formatPlot(plot);
 
+		if (showMarkers) {
+			for (Marker marker : markers) {
+				IntervalMarker im = new IntervalMarker(marker.getLeftMillis() / 1000L, marker.getRightMillis() / 1000L);
+				im.setLabel(marker.getName());
+				im.setLabelFont(new Font("Sans Serif", Font.ITALIC | Font.BOLD, 14));
+				im.setLabelAnchor(RectangleAnchor.TOP);
+				im.setLabelOffset(new RectangleInsets(8d, 0d, 0d, 0d));
+				im.setLabelPaint(Color.BLACK);
+				im.setAlpha(.2f);
+				im.setPaint(Color.WHITE);
+				im.setOutlinePaint(Color.BLACK);
+				im.setOutlineStroke(new BasicStroke(1.0f));
+				plot.addDomainMarker(im, Layer.BACKGROUND);
+			}
+		}
+
 		LegendTitle legend = chart.getLegend();
 		legend.setBackgroundPaint(new Color(229, 229, 229));
 		legend.setFrame(new LineBorder(new Color(213, 213, 213), new BasicStroke(1.0f), legend.getFrame().getInsets()));
+
+		// only for non-logarithmic axes
+		// range must be set after plot is created, otherwise nothing is drawn
+		if (dataRange != null && !xAxisType.equals(AxisType.LOGARITHMIC)) {
+			xAxis.setRange(dataRange.getLowerSeconds(), dataRange.getUpperSeconds());
+		}
 
 		return chart;
 	}
 
 	private NumberAxis createAxis(final AxisType axisType, final String axisLabel) {
-		NumberAxis numberAxis = axisType.equals(AxisType.LOGARITHMIC) ? new LogarithmicAxis(axisLabel)
-				: new NumberAxis(axisLabel);
+		NumberAxis numberAxis =
+				axisType.equals(AxisType.LOGARITHMIC) ? new LogarithmicAxis(axisLabel) : new NumberAxis(axisLabel);
 		numberAxis.setNumberFormatOverride((NumberFormat) numberFormat.clone());
 		return numberAxis;
 	}
@@ -179,34 +208,34 @@ public class PlotCreator {
 
 	public void writePlotFile(final File file, final AxisType xAxisType, final AxisType yAxisType,
 			final RendererType rendererType, final DisplayData displayData, final ChartDimensions dimensions,
-			final NumberDataSet... dataSets) throws IOException {
+			final DataRange dataRange, boolean showMarkers, final NumberDataSet... dataSets) throws IOException {
 		createParentDirs(file);
 		for (NumberDataSet dataSet : dataSets) {
 			dataSet.sortSeries();
 		}
-		JFreeChart chart = createPlot(xAxisType, yAxisType, rendererType, displayData, dataSets);
+		JFreeChart chart = createPlot(xAxisType, yAxisType, rendererType, displayData, dataRange, showMarkers, dataSets);
 		BufferedImage chartImage = chart.createBufferedImage(dimensions.getWidth(), dimensions.getHeight());
 		ImageIO.write(chartImage, "png", file);
 	}
 
 	public void writePlotFile(final File file, final AxisType xAxisType, final AxisType yAxisType,
-			final RendererType rendererType, final ChartDimensions dimensions, final NumberDataSet... dataSets)
-			throws IOException {
+			final RendererType rendererType, final ChartDimensions dimensions, final DataRange dataRange, boolean showMarkers,
+			final NumberDataSet... dataSets) throws IOException {
 		DisplayData displayData = selectDisplayData(file, displayDataList);
-		writePlotFile(file, xAxisType, yAxisType, rendererType, displayData, dimensions, dataSets);
+		writePlotFile(file, xAxisType, yAxisType, rendererType, displayData, dimensions, dataRange, showMarkers, dataSets);
 	}
 
 	static class PerfAlyzerDrawingSupplier extends DefaultDrawingSupplier {
 
 		public PerfAlyzerDrawingSupplier() {
 			super(DEFAULT_PAINT_SEQUENCE, DEFAULT_FILL_PAINT_SEQUENCE, DEFAULT_OUTLINE_PAINT_SEQUENCE,
-					new Stroke[] { new BasicStroke(1.5f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_BEVEL) },
+					new Stroke[]{new BasicStroke(1.5f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_BEVEL)},
 					DEFAULT_OUTLINE_STROKE_SEQUENCE, createStandardSeriesShapes());
 		}
 
 		/**
 		 * Creates an array of standard shapes to display for the items in series on charts.
-		 * 
+		 *
 		 * @return The array of shapes.
 		 */
 		public static Shape[] createStandardSeriesShapes() {
@@ -215,8 +244,6 @@ public class PlotCreator {
 
 			double size = 4.0;
 			double delta = size / 2.0;
-			int[] xpoints = null;
-			int[] ypoints = null;
 
 			// square
 			result[0] = new Rectangle2D.Double(-delta, -delta, size, size);
@@ -224,8 +251,8 @@ public class PlotCreator {
 			result[1] = new Ellipse2D.Double(-delta, -delta, size, size);
 
 			// up-pointing triangle
-			xpoints = intArray(0.0, delta, -delta);
-			ypoints = intArray(-delta, delta, delta);
+			int[] xpoints = intArray(0.0, delta, -delta);
+			int[] ypoints = intArray(-delta, delta, delta);
 			result[2] = new Polygon(xpoints, ypoints, 3);
 
 			// diamond
@@ -264,37 +291,35 @@ public class PlotCreator {
 		/**
 		 * Helper method to avoid lots of explicit casts in getShape(). Returns an array containing
 		 * the provided doubles cast to ints.
-		 * 
+		 *
 		 * @param a
-		 *            x
+		 * 		x
 		 * @param b
-		 *            y
+		 * 		y
 		 * @param c
-		 *            z
-		 * 
+		 * 		z
 		 * @return int[3] with converted params.
 		 */
 		private static int[] intArray(final double a, final double b, final double c) {
-			return new int[] { (int) a, (int) b, (int) c };
+			return new int[]{(int) a, (int) b, (int) c};
 		}
 
 		/**
 		 * Helper method to avoid lots of explicit casts in getShape(). Returns an array containing
 		 * the provided doubles cast to ints.
-		 * 
+		 *
 		 * @param a
-		 *            x
+		 * 		x
 		 * @param b
-		 *            y
+		 * 		y
 		 * @param c
-		 *            z
+		 * 		z
 		 * @param d
-		 *            t
-		 * 
+		 * 		t
 		 * @return int[4] with converted params.
 		 */
 		private static int[] intArray(final double a, final double b, final double c, final double d) {
-			return new int[] { (int) a, (int) b, (int) c, (int) d };
+			return new int[]{(int) a, (int) b, (int) c, (int) d};
 		}
 	}
 

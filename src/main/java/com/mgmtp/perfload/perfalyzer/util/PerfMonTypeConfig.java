@@ -15,35 +15,59 @@
  */
 package com.mgmtp.perfload.perfalyzer.util;
 
+import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.mgmtp.perfload.perfalyzer.util.AggregationType.MEAN;
+import static com.mgmtp.perfload.perfalyzer.util.AggregationType.MEDIAN;
+import static com.mgmtp.perfload.perfalyzer.util.PerfMonTypeConfig.Constants.AGGR_HEADERS_1;
+import static com.mgmtp.perfload.perfalyzer.util.PerfMonTypeConfig.Constants.AGGR_HEADERS_2;
+import static com.mgmtp.perfload.perfalyzer.util.PerfMonTypeConfig.Constants.HEADER_MEAN;
+import static com.mgmtp.perfload.perfalyzer.util.PerfMonTypeConfig.Constants.HEADER_MEDIAN;
+import static java.util.Arrays.asList;
+
 /**
- * 
  * @author rnaegele
  */
 public enum PerfMonTypeConfig {
-	CPU("cpu_X"),
-	JAVA("java_\\d+"),
-	IO("io_\\d+(?:_(?:r|w))?", true, 1d / 1024d),
-	MEM("mem", 1d / 1024d),
-	SWAP("swap", 1d / 1024d);
+	CPU("cpu_X", HEADER_MEAN, AGGR_HEADERS_1, MEAN),
+	JAVA("java_\\d+", HEADER_MEAN, AGGR_HEADERS_1, MEAN),
+	IO("io_\\d+(?:_(?:r|w))?", true, 1d / 1024d, HEADER_MEAN, AGGR_HEADERS_1, MEAN),
+	MEM("mem", 1d / 1024d, HEADER_MEDIAN, AGGR_HEADERS_2, MEDIAN),
+	SWAP("swap", 1d / 1024d, HEADER_MEDIAN, AGGR_HEADERS_2, MEDIAN);
+
+	static class Constants {
+		static final String HEADER_MEAN = "mean";
+		static final String HEADER_MEDIAN = "median";
+		static final List<String> AGGR_HEADERS_1 = asList("min", "mean", "max");
+		static final List<String> AGGR_HEADERS_2 = asList("min", "q0.1", "q0.5", "q0.9", "max");
+	}
 
 	private final Pattern pattern;
 	private final boolean normalizeValues;
-	private double factor;
+	private final double factor;
+	private final String header;
+	private final List<String> aggregatedHeaders;
+	private final AggregationType aggregationType;
 
-	private PerfMonTypeConfig(final String pattern, final boolean normalizeValues, final double factor) {
+	private PerfMonTypeConfig(final String pattern, final boolean normalizeValues, final double factor, final String header,
+			final List<String> aggregatedHeaders, final AggregationType aggregationType) {
 		this.normalizeValues = normalizeValues;
 		this.factor = factor;
+		this.header = header;
+		this.aggregatedHeaders = aggregatedHeaders;
+		this.aggregationType = aggregationType;
 		this.pattern = Pattern.compile(pattern);
 	}
 
-	private PerfMonTypeConfig(final String pattern, final double factor) {
-		this(pattern, false, factor);
+	private PerfMonTypeConfig(final String pattern, final double factor, final String header, final List<String> aggregatedHeaders,
+			final AggregationType aggregationType) {
+		this(pattern, false, factor, header, aggregatedHeaders, aggregationType);
 	}
 
-	private PerfMonTypeConfig(final String pattern) {
-		this(pattern, false, 1d);
+	private PerfMonTypeConfig(final String pattern, final String header, final List<String> aggregatedHeaders, final AggregationType aggregationType) {
+		this(pattern, false, 1d, header, aggregatedHeaders, aggregationType);
 	}
 
 	/**
@@ -62,5 +86,27 @@ public enum PerfMonTypeConfig {
 
 	public double factor(final double value) {
 		return value * factor;
+	}
+
+	public String getHeader() {
+		return header;
+	}
+
+	public List<String> getAggregatedHeaders() {
+		return aggregatedHeaders;
+	}
+
+	public AggregationType getAggregationType() {
+		return aggregationType;
+	}
+
+	public static PerfMonTypeConfig fromString(final String perfmonType) {
+		for (PerfMonTypeConfig tc : PerfMonTypeConfig.values()) {
+			Matcher matcher = tc.getPattern().matcher(perfmonType);
+			if (matcher.matches()) {
+				return tc;
+			}
+		}
+		throw new IllegalStateException("No binning content found for type: " + perfmonType);
 	}
 }

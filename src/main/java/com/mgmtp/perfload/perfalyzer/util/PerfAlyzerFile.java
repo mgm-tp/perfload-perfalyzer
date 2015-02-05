@@ -15,28 +15,29 @@
  */
 package com.mgmtp.perfload.perfalyzer.util;
 
-import static com.google.common.base.Joiner.on;
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Lists.newArrayListWithExpectedSize;
-import static org.apache.commons.io.FilenameUtils.getExtension;
-import static org.apache.commons.io.FilenameUtils.getPath;
-import static org.apache.commons.io.FilenameUtils.wildcardMatch;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
+import static com.google.common.base.Joiner.on;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Lists.newArrayListWithExpectedSize;
+import static org.apache.commons.io.FilenameUtils.getExtension;
+import static org.apache.commons.io.FilenameUtils.wildcardMatch;
 
 /**
  * @author rnaegele
  */
-public class PerfAlyzerFile {
+public class PerfAlyzerFile implements Comparable<PerfAlyzerFile> {
 
 	/**
 	 * Regular expression that matches a part of a perfAlyzer file. File name parts are enclosed by
@@ -48,7 +49,7 @@ public class PerfAlyzerFile {
 	private final String path;
 	private String extension;
 	private final List<String> fileNameParts;
-	private final String marker;
+	private String marker;
 
 	private PerfAlyzerFile(final String path, final String extension, final List<String> fileNameParts, final String marker) {
 		this.path = path;
@@ -73,7 +74,7 @@ public class PerfAlyzerFile {
 		m = PATTERN_MARKER.matcher(fileName);
 		String marker = m.find() ? m.group(1) : null;
 
-		return new PerfAlyzerFile(getPath(file.getPath()), getExtension(fileName), parts, marker);
+		return new PerfAlyzerFile(FilenameUtils.getPath(file.getPath()), getExtension(fileName), parts, marker);
 	}
 
 	public PerfAlyzerFile copy() {
@@ -89,6 +90,10 @@ public class PerfAlyzerFile {
 			baseName += "{" + marker + '}';
 		}
 		return new File(path, baseName + (extension.equals(StringUtils.EMPTY) ? StringUtils.EMPTY : '.' + extension));
+	}
+
+	public Path getPath() {
+		return getFile().toPath();
 	}
 
 	public PerfAlyzerFile addFileNamePart(final String part) {
@@ -142,6 +147,15 @@ public class PerfAlyzerFile {
 	 */
 	public String getMarker() {
 		return marker;
+	}
+
+	public void setMarker(final String marker) {
+		this.marker = marker;
+	}
+
+	@Override
+	public int compareTo(final PerfAlyzerFile o) {
+		return getFile().compareTo(o.getFile());
 	}
 
 	@Override

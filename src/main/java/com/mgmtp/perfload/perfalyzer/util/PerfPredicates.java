@@ -18,13 +18,16 @@ package com.mgmtp.perfload.perfalyzer.util;
 import static org.apache.commons.io.FilenameUtils.wildcardMatch;
 
 import java.io.File;
-
-import com.google.common.base.Predicate;
+import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * @author rnaegele
  */
 public class PerfPredicates {
+
+	private PerfPredicates() {
+	}
 
 	public static Predicate<File> parentFileNameEquals(final String fileName) {
 		return new ParentFileNamePredicate(fileName);
@@ -46,8 +49,8 @@ public class PerfPredicates {
 		return new PerfAlyzerFileNameContainsPredicate(s);
 	}
 
-	public static Predicate<PerfAlyzerFile> perfAlyzerFileNameMatchesWildcard(final String s) {
-		return new PerfAlyzerFileNameMatchesWildcardPredicate(s);
+	public static Predicate<PerfAlyzerFile> perfAlyzerFilePartsMatchWildcards(final String... parts) {
+		return new PerfAlyzerFilePartsMatchWildcardsPredicate(parts);
 	}
 
 	public static Predicate<File> fileNameMatchesWildcard(final String s) {
@@ -62,7 +65,7 @@ public class PerfPredicates {
 		}
 
 		@Override
-		public boolean apply(final File input) {
+		public boolean test(final File input) {
 			return input.getParentFile().getName().equals(fileName);
 		}
 	}
@@ -75,7 +78,7 @@ public class PerfPredicates {
 		}
 
 		@Override
-		public boolean apply(final File input) {
+		public boolean test(final File input) {
 			return input.getName().equals(s);
 		}
 	}
@@ -88,7 +91,7 @@ public class PerfPredicates {
 		}
 
 		@Override
-		public boolean apply(final File input) {
+		public boolean test(final File input) {
 			return input.getName().contains(s);
 		}
 	}
@@ -101,7 +104,7 @@ public class PerfPredicates {
 		}
 
 		@Override
-		public boolean apply(final File input) {
+		public boolean test(final File input) {
 			return input.getName().startsWith(s);
 		}
 	}
@@ -114,21 +117,32 @@ public class PerfPredicates {
 		}
 
 		@Override
-		public boolean apply(final PerfAlyzerFile input) {
+		public boolean test(final PerfAlyzerFile input) {
 			return input.getFile().getName().contains(s);
 		}
 	}
 
-	private static class PerfAlyzerFileNameMatchesWildcardPredicate implements Predicate<PerfAlyzerFile> {
-		private final String s;
+	private static class PerfAlyzerFilePartsMatchWildcardsPredicate implements Predicate<PerfAlyzerFile> {
+		private final String[] parts;
 
-		public PerfAlyzerFileNameMatchesWildcardPredicate(final String s) {
-			this.s = s;
+		public PerfAlyzerFilePartsMatchWildcardsPredicate(final String... parts) {
+			this.parts = parts;
 		}
 
 		@Override
-		public boolean apply(final PerfAlyzerFile input) {
-			return wildcardMatch(input.getFile().getName(), s);
+		public boolean test(final PerfAlyzerFile input) {
+			List<String> fileNameParts = input.getFileNameParts();
+			int size = fileNameParts.size();
+			boolean result = size == parts.length;
+			if (!result) {
+				return false;
+			}
+			for (int i = 0; i < size; i++) {
+				if (!wildcardMatch(fileNameParts.get(i), parts[i])) {
+					return false;
+				}
+			}
+			return true;
 		}
 	}
 
@@ -140,7 +154,7 @@ public class PerfPredicates {
 		}
 
 		@Override
-		public boolean apply(final File input) {
+		public boolean test(final File input) {
 			return wildcardMatch(input.getName(), s);
 		}
 	}

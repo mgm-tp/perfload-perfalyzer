@@ -43,4 +43,7 @@ public class PerfAlyzerConstants {
 	public static final int MEASURING_NORMALIZED_COL_RESULT = 7;
 	public static final int MEASURING_NORMALIZED_COL_ERROR_MSG = 8;
 	public static final int MEASURING_NORMALIZED_COL_EXECUTION_ID = 9;
+
+	private PerfAlyzerConstants() {
+	}
 }

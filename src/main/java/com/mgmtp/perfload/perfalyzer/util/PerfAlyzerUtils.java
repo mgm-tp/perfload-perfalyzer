@@ -52,6 +52,9 @@ public class PerfAlyzerUtils {
 	 */
 	private static final Pattern PATTERN_FILE_NAME_PARTS = Pattern.compile("\\[([^]]+)\\]");
 
+	private PerfAlyzerUtils() {
+	}
+
 	/**
 	 * Extracts file name parts as a list. File name parts are enclosed by square brackets, e. g.
 	 * {@code [perfmon][cpu_X].out}.
@@ -114,7 +117,7 @@ public class PerfAlyzerUtils {
 			boolean headerLine = true;
 			List<SeriesPoint> result = newArrayListWithExpectedSize(200);
 
-			for (String line = null; (line = br.readLine()) != null;) {
+			for (String line; (line = br.readLine()) != null;) {
 				try {
 					if (headerLine) {
 						headerLine = false;
@@ -171,7 +174,7 @@ public class PerfAlyzerUtils {
 		tokenizer.setDelimiterChar(';');
 
 		return readLines(file, charset, new LineProcessor<Map<String, List<SeriesPoint>>>() {
-			private String[] headers = null;
+			private String[] headers;
 			private final Map<String, List<SeriesPoint>> result = newHashMapWithExpectedSize(4);
 			private int colCount;
 

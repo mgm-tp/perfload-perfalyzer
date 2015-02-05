@@ -24,6 +24,9 @@ public class StrBuilderUtils {
 
 	private static final char CSV_QUOTE = '"';
 
+	private StrBuilderUtils() {
+	}
+
 	/**
 	 * <p>
 	 * Encloses the given value into double-quotes. Quote characters are escaped with an additional

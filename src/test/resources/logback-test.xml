@@ -19,11 +19,23 @@
 <configuration>
 	<appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
-			<pattern>%d{HH:mm:ss.SSS} [%t] %-5p %c{1} - %m%n</pattern>
+			<pattern>%d{HH:mm:ss.SSS} [%t] %-5p %c{1} %X{file} %m%n</pattern>
 		</encoder>
 	</appender>
 
-	<root level="DEBUG">
+	<appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>logs/perfload-perfalyzer.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>logs/perfload-perfalyzer.%d.log</fileNamePattern>
+			<maxHistory>30</maxHistory>
+		</rollingPolicy>
+		<encoder>
+			<pattern>%date{yyyy-MM-dd HH:mm:ss} %-5p %c{1} %X{file} %m%n</pattern>
+		</encoder>
+	</appender>
+
+	<root level="info">
+		<appender-ref ref="file" />
 		<appender-ref ref="stdout" />
 	</root>
 </configuration>

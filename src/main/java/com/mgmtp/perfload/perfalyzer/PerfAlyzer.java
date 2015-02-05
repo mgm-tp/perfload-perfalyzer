@@ -15,21 +15,6 @@
  */
 package com.mgmtp.perfload.perfalyzer;
 
-import static com.google.common.base.Preconditions.checkState;
-import static org.apache.commons.io.FileUtils.copyDirectoryToDirectory;
-import static org.apache.commons.io.FileUtils.deleteDirectory;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-
-import javax.annotation.Nullable;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import com.google.common.base.Stopwatch;
@@ -45,18 +30,45 @@ import com.mgmtp.perfload.perfalyzer.annotations.ReportPreparationDir;
 import com.mgmtp.perfload.perfalyzer.annotations.UnzippedDir;
 import com.mgmtp.perfload.perfalyzer.reporting.ReportCreator;
 import com.mgmtp.perfload.perfalyzer.reporting.email.EmailReporter;
-import com.mgmtp.perfload.perfalyzer.util.DirectoryLister;
+import com.mgmtp.perfload.perfalyzer.util.Marker;
+import com.mgmtp.perfload.perfalyzer.util.NioUtils;
+import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
 import com.mgmtp.perfload.perfalyzer.workflow.WorkflowExecutor;
+import org.apache.commons.lang3.text.StrTokenizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.channels.WritableByteChannel;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+
+import static com.google.common.base.Preconditions.checkState;
+import static com.mgmtp.perfload.perfalyzer.util.DirectoryLister.listAllPerfAlyzerFiles;
+import static com.mgmtp.perfload.perfalyzer.util.DirectoryLister.listPerfAlyzerFiles;
+import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.Files.newByteChannel;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.WRITE;
+import static org.apache.commons.io.FileUtils.copyDirectoryToDirectory;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 
 /**
  * The PerfAlyzer class is the entry point for the application.
- * 
+ *
  * @author ctchinda
  */
 @Singleton
 public class PerfAlyzer {
 
-	private final static Logger LOG = LoggerFactory.getLogger(PerfAlyzer.class);
+	private static final Logger LOG = LoggerFactory.getLogger(PerfAlyzer.class);
 
 	private final boolean doReportPreparation;
 	private final boolean doNormalization;
@@ -71,6 +83,7 @@ public class PerfAlyzer {
 	private final WorkflowExecutor workflowExecutor;
 	private final ReportCreator reportCreator;
 	private final EmailReporter emailReporter;
+	private final List<Marker> markers;
 
 	@Inject
 	public PerfAlyzer(@UnzippedDir final File unzippedDir, @BinnedDir final File binningDir,
@@ -78,7 +91,7 @@ public class PerfAlyzer {
 			@ReportDir final File reportDir, @DoNormalization final boolean doNormalization,
 			@DoBinning final boolean doBinning, @DoReportPreparation final boolean doReportPreparation,
 			final WorkflowExecutor workflowExecutor, final ReportCreator reportCreator,
-			@Nullable final EmailReporter emailReporter) {
+			@Nullable final EmailReporter emailReporter, final List<Marker> markers) {
 
 		this.unzippedDir = unzippedDir;
 		this.binnedDir = binningDir;
@@ -94,6 +107,44 @@ public class PerfAlyzer {
 		this.reportCreator = reportCreator;
 		this.emailReporter = emailReporter;
 
+		this.markers = markers;
+	}
+
+	public static void main(final String[] args) {
+		JCommander jCmd = null;
+		try {
+			Stopwatch stopwatch = Stopwatch.createStarted();
+			LOG.info("Starting perfAlyzer...");
+
+			LOG.info("Arguments:");
+			for (String arg : args) {
+				LOG.info(arg);
+			}
+			PerfAlyzerArgs perfAlyzerArgs = new PerfAlyzerArgs();
+
+			jCmd = new JCommander(perfAlyzerArgs);
+			jCmd.parse(args);
+
+			Injector injector = Guice.createInjector(new PerfAlyzerModule(perfAlyzerArgs));
+			PerfAlyzer perfAlyzer = injector.getInstance(PerfAlyzer.class);
+			perfAlyzer.runPerfAlyzer();
+
+			ExecutorService executorService = injector.getInstance(ExecutorService.class);
+			executorService.shutdownNow();
+
+			stopwatch.stop();
+			LOG.info("Done.");
+			LOG.info("Total execution time: {}", stopwatch);
+		} catch (ParameterException ex) {
+			LOG.error(ex.getMessage());
+			StringBuilder sb = new StringBuilder(200);
+			jCmd.usage(sb);
+			LOG.info(sb.toString());
+			System.exit(1);
+		} catch (Exception ex) {
+			LOG.error(ex.getMessage(), ex);
+			System.exit(1);
+		}
 	}
 
 	public void runPerfAlyzer() throws IOException {
@@ -142,26 +193,62 @@ public class PerfAlyzer {
 		}
 	}
 
-	private void executeWorkflows() throws IOException {
+	private void executeWorkflows() {
 		LOG.info("Executing workflows...");
 
 		if (doNormalization) {
-			workflowExecutor.executeNormalizationTasks(unzippedDir, DirectoryLister.listFiles(unzippedDir), normalizedDir);
+			workflowExecutor.executeNormalizationTasks(unzippedDir, normalizedDir);
+			extractFilesForMarkers();
 		}
 
 		if (doBinning) {
-			workflowExecutor.executeBinningTasks(normalizedDir, DirectoryLister.listPerfAlyzerFiles(normalizedDir), binnedDir);
+			workflowExecutor.executeBinningTasks(normalizedDir, binnedDir);
 		}
 
 		if (doReportPreparation) {
-			workflowExecutor.executeReportPreparationTasks(binnedDir, DirectoryLister.listPerfAlyzerFiles(binnedDir),
-					reportPreparationDir);
+			workflowExecutor.executeReportPreparationTasks(binnedDir, reportPreparationDir);
+		}
+	}
+
+	private void extractFilesForMarkers() {
+		if (!markers.isEmpty()) {
+			StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
+			tokenizer.setDelimiterChar(';');
+
+			listPerfAlyzerFiles(normalizedDir)
+					.stream()
+					.filter(perfAlyzerFile -> {
+						// GC logs cannot split up here and need to explicitly handle markers later.
+						// Load profiles contains the markers themselves and thus need to be filtered out as well.
+						String fileName = perfAlyzerFile.getFile().getName();
+						return !fileName.contains("gclog") & !fileName.contains("[loadprofile]");
+					})
+					.forEach(perfAlyzerFile -> markers.forEach(marker -> {
+						try {
+							PerfAlyzerFile markerFile = perfAlyzerFile.copy();
+							markerFile.setMarker(marker.getName());
+
+							Path destPath = normalizedDir.toPath().resolve(markerFile.getFile().toPath());
+							WritableByteChannel destChannel = newByteChannel(destPath, CREATE, WRITE);
+
+							Path srcPath = normalizedDir.toPath().resolve(perfAlyzerFile.getFile().toPath());
+							NioUtils.lines(srcPath, UTF_8)
+									.filter(s -> {
+										tokenizer.reset(s);
+										long timestamp = Long.parseLong(tokenizer.nextToken());
+										return marker.getLeftMillis() <= timestamp && marker.getRightMillis() > timestamp;
+									})
+									.forEach(s -> writeLineToChannel(destChannel, s, UTF_8));
+						} catch (IOException e) {
+							throw new UncheckedIOException(e);
+						}
+					}));
 		}
 	}
 
 	private void createReport() throws IOException {
 		LOG.info("Writing report...");
-		reportCreator.createReport(DirectoryLister.listFiles(reportPreparationDir));
+		reportCreator.createReport(listAllPerfAlyzerFiles(reportPreparationDir));
 
 		// copy assets
 		copyDirectoryToDirectory(new File("assets"), reportDir);
@@ -171,38 +258,4 @@ public class PerfAlyzer {
 			emailReporter.createAndSendReportMail();
 		}
 	}
-
-	public static void main(final String[] args) {
-		JCommander jCmd = null;
-		try {
-			Stopwatch stopwatch = Stopwatch.createStarted();
-			LOG.info("Starting perfAlyzer...");
-
-			PerfAlyzerArgs perfAlyzerArgs = new PerfAlyzerArgs();
-
-			jCmd = new JCommander(perfAlyzerArgs);
-			jCmd.parse(args);
-
-			Injector injector = Guice.createInjector(new PerfAlyzerModule(perfAlyzerArgs));
-			PerfAlyzer perfAlyzer = injector.getInstance(PerfAlyzer.class);
-			perfAlyzer.runPerfAlyzer();
-
-			ExecutorService executorService = injector.getInstance(ExecutorService.class);
-			executorService.shutdownNow();
-
-			stopwatch.stop();
-			LOG.info("Done.");
-			LOG.info("Total execution time: {}", stopwatch);
-		} catch (ParameterException ex) {
-			LOG.error(ex.getMessage());
-			StringBuilder sb = new StringBuilder(200);
-			jCmd.usage(sb);
-			LOG.info(sb.toString());
-			System.exit(1);
-		} catch (Exception ex) {
-			LOG.error(ex.getMessage(), ex);
-			System.exit(1);
-		}
-	}
-
 }

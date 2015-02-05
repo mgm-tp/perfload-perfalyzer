@@ -25,6 +25,9 @@ import org.hamcrest.TypeSafeMatcher;
 
 public class FileMatchers {
 
+	private FileMatchers() {
+	}
+
 	public static Matcher<File> isDirectory() {
 		return new TypeSafeMatcher<File>() {
 			File fileTested;

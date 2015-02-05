@@ -26,7 +26,6 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import com.google.common.base.Charsets;
-import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerUtils;
 
 /**
  * @author rnaegele

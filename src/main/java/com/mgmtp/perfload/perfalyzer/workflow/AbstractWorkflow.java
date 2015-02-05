@@ -24,6 +24,7 @@ import javax.inject.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mgmtp.perfload.perfalyzer.reportpreparation.DataRange;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.DisplayData;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator;
 import com.mgmtp.perfload.perfalyzer.util.Marker;
@@ -38,7 +39,6 @@ public abstract class AbstractWorkflow implements Workflow {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	protected final TimestampNormalizer timestampNormalizer;
-	protected final List<Marker> markers;
 	protected final Provider<NumberFormat> intNumberFormatProvider;
 	protected final Provider<NumberFormat> floatNumberFormatProvider;
 	protected final List<DisplayData> displayDataList;
@@ -46,17 +46,19 @@ public abstract class AbstractWorkflow implements Workflow {
 	protected final TestMetadata testMetadata;
 	protected final PlotCreator plotCreator;
 
-	protected AbstractWorkflow(final TimestampNormalizer timestampNormalizer, final List<Marker> markers,
-			final Provider<NumberFormat> intNumberFormatProvider, final Provider<NumberFormat> floatNumberFormatProvider,
-			final List<DisplayData> displayDataList, final ResourceBundle resourceBundle, final TestMetadata testMetadata,
-			final PlotCreator plotCreator) {
+	protected AbstractWorkflow(final TimestampNormalizer timestampNormalizer, final Provider<NumberFormat> intNumberFormatProvider,
+			final Provider<NumberFormat> floatNumberFormatProvider, final List<DisplayData> displayDataList, final ResourceBundle resourceBundle,
+			final TestMetadata testMetadata, final PlotCreator plotCreator) {
 		this.timestampNormalizer = timestampNormalizer;
-		this.markers = markers;
 		this.intNumberFormatProvider = intNumberFormatProvider;
 		this.floatNumberFormatProvider = floatNumberFormatProvider;
 		this.displayDataList = displayDataList;
 		this.resourceBundle = resourceBundle;
 		this.testMetadata = testMetadata;
 		this.plotCreator = plotCreator;
+	}
+
+	protected DataRange rangeFromMarker(final Marker marker) {
+		return marker != null ? new DataRange(marker.getLeftMillis(), marker.getRightMillis()) : null;
 	}
 }

@@ -15,19 +15,6 @@
  */
 package com.mgmtp.perfload.perfalyzer.normalization;
 
-import com.mgmtp.perfload.perfalyzer.util.ChannelData;
-import com.mgmtp.perfload.perfalyzer.util.Marker;
-import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
-import org.apache.commons.lang3.text.StrBuilder;
-import org.apache.commons.lang3.text.StrTokenizer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.time.ZonedDateTime;
-import java.util.List;
-
 import static com.google.common.collect.Lists.newArrayListWithExpectedSize;
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_RAW_COL_ERROR_MSG;
@@ -41,6 +28,19 @@ import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASUR
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_RAW_COL_URI;
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_RAW_COL_URI_ALIAS;
 import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.time.ZonedDateTime;
+import java.util.List;
+
+import org.apache.commons.lang3.text.StrBuilder;
+import org.apache.commons.lang3.text.StrTokenizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.mgmtp.perfload.perfalyzer.util.ChannelData;
+import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
 
 /**
  * Normalizing implementation for measuring logs.
@@ -56,21 +56,19 @@ public class MeasuringNormalizingStrategy implements NormalizingStrategy {
 
 	private final StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
 	private final TimestampNormalizer timestampNormalizer;
-	private final List<Marker> markers;
 
-	public MeasuringNormalizingStrategy(final TimestampNormalizer timestampNormalizer, final List<Marker> markers) {
+	public MeasuringNormalizingStrategy(final TimestampNormalizer timestampNormalizer) {
 		this.timestampNormalizer = timestampNormalizer;
-		this.markers = markers;
 		tokenizer.setDelimiterChar(DELIMITER);
 	}
 
 	@Override
-	public List<ChannelData> normalizeLine(final String fileName, final String line) {
+	public List<ChannelData> normalizeLine(final String line) {
 		tokenizer.reset(line);
 		String[] tokens = tokenizer.getTokenArray();
 
 		List<ChannelData> channelDataList = newArrayListWithExpectedSize(3);
-		ZonedDateTime timestamp = null;
+		ZonedDateTime timestamp;
 		try {
 			timestamp = ZonedDateTime.parse(tokens[3]);
 		} catch (IllegalArgumentException ex) {
@@ -89,7 +87,7 @@ public class MeasuringNormalizingStrategy implements NormalizingStrategy {
 		String responseTimeFirstByte = tokens[MEASURING_RAW_COL_RESPONSE_TIME_FIRST_BYTE];
 		String responseTime = tokens[MEASURING_RAW_COL_RESPONSE_TIME];
 		String operation = tokens[MEASURING_RAW_COL_OPERATION];
-		if (operation == null || operation.length() == 0) {
+		if (operation == null || operation.isEmpty()) {
 			return channelDataList;
 		}
 
@@ -133,14 +131,6 @@ public class MeasuringNormalizingStrategy implements NormalizingStrategy {
 
 		String resultLine = sb.toString();
 		channelDataList.add(new ChannelData(CHANNEL_BASE_NAME, operation, resultLine));
-
-		for (Marker marker : markers) {
-			if (marker.isInMarker(normalizedTimestamp)) {
-				sb = new StrBuilder();
-				channelDataList.add(new ChannelData(CHANNEL_BASE_NAME, operation, marker.getName(), resultLine));
-			}
-		}
-
 		return channelDataList;
 	}
 }

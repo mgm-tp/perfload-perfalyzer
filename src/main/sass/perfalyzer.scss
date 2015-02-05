@@ -1,0 +1,201 @@
+@import "bootstrap-variables";
+@import "bootstrap";
+@import "bootstrap/theme";
+
+body {
+  padding-top: 70px;
+}
+
+.perf-row {
+  @extend .row;
+}
+
+@media all and (min-width: $container-tablet - $grid-gutter-width) {
+  .navbar-fixed-width {
+    width: $container-tablet - $grid-gutter-width;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media all and (min-width: $container-desktop - $grid-gutter-width) {
+  .navbar-fixed-width {
+    width: $container-desktop - $grid-gutter-width;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+}
+
+@media all and (min-width: $container-large-desktop - $grid-gutter-width) {
+  .navbar-fixed-width {
+    width: $container-large-desktop - $grid-gutter-width;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+#navigation {
+  @extend .navbar;
+  @extend .navbar-default;
+  @extend .navbar-fixed-top;
+  @extend .navbar-fixed-width;
+
+  .perf-navbar-header {
+    @extend .navbar-header;
+    @extend .navbar-brand;
+  }
+
+  .perf-navbar-content {
+    @extend .collapse;
+    @extend .navbar-collapse;
+
+    > ul {
+      @extend .nav;
+      @extend .navbar-nav;
+    }
+  }
+}
+
+.perf-quickjump {
+  @extend .navbar-right;
+}
+
+#testmeta {
+  background-color: white;
+  margin-bottom: 20px;
+}
+
+img {
+  @extend .img-responsive;
+}
+
+.perf-report-title {
+  margin-top: 30px;
+  text-shadow: 2px 2px 2px gray;
+}
+
+.perf-header {
+  @extend .well;
+  @extend .well-sm;
+}
+
+.perf-overview-header {
+  @extend .perf-header;
+  text-align: center;
+}
+
+.perf-container {
+  @extend .container;
+}
+
+.perf-logo-img {
+  @extend .pull-right;
+  margin-top: 25px;
+}
+
+.perf-tabs {
+  //  @extend .well;
+  //  @extend .well-sm;
+  > ul {
+    @extend .nav;
+    @extend .nav-pills;
+  }
+  margin-bottom: 1px;
+}
+
+.perf-tab-content {
+  @extend .tab-content;
+}
+
+.perf-tab-pane {
+  @extend .tab-pane;
+}
+
+.perf-panel {
+  @extend .panel;
+  @extend .panel-default;
+}
+
+.perf-panel-heading {
+  @extend .panel-heading;
+  @extend .panel-title;
+  padding: 10px;
+}
+
+.perf-panel-title {
+  font-weight: bold;
+}
+
+.perf-top-link {
+  @extend .pull-right;
+  font-style: italic;
+}
+
+.perf-panel-body {
+  @extend .panel-body;
+  padding: 10px;
+}
+
+.perf-overview-table {
+  @extend .table;
+  @extend .table-condensed;
+}
+
+.perf-data-table {
+  @extend .perf-overview-table;
+  @extend .table-bordered;
+  @extend .table-striped;
+}
+
+.perf-col-1 {
+  @extend .col-md-1;
+}
+
+.perf-col-2 {
+  @extend .col-md-2;
+}
+
+.perf-col-3 {
+  @extend .col-md-3;
+}
+
+.perf-col-4 {
+  @extend .col-md-4;
+}
+
+.perf-col-5 {
+  @extend .col-md-5;
+}
+
+.perf-col-6 {
+  @extend .col-md-6;
+}
+
+.perf-col-7 {
+  @extend .col-md-7;
+}
+
+.perf-col-10 {
+  @extend .col-md-10;
+}
+
+.perf-col-11 {
+  @extend .col-md-11;
+}
+
+.perf-col-left {
+  @extend .perf-col-5;
+}
+
+.perf-col-right {
+  @extend .perf-col-7;
+}
+
+.perf-span-all {
+  @extend .col-md-12;
+}
+
+.perf-footer {
+  @extend footer;
+}

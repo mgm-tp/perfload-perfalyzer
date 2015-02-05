@@ -54,4 +54,7 @@ public class PerfAlyzerArgs {
 
 	@Parameter(names = "-test.comment", arity = 1, description = "A comment for the test")
 	String testComment;
+
+	@Parameter(names = "-m", arity = 1, description = "A file with additional markers")
+	File markersFile;
 }

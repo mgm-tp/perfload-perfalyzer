@@ -15,9 +15,10 @@
  */
 package com.mgmtp.perfload.perfalyzer.util;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Maps.newHashMap;
-import static org.apache.commons.io.IOUtils.closeQuietly;
+import com.google.common.base.Charsets;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.text.StrBuilder;
+import org.apache.commons.lang3.text.StrTokenizer;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,10 +30,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
-import org.apache.commons.lang3.text.StrBuilder;
-import org.apache.commons.lang3.text.StrTokenizer;
-
-import com.google.common.base.Charsets;
+import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Maps.newHashMap;
+import static org.apache.commons.io.IOUtils.closeQuietly;
 
 /**
  * @author ctchinda
@@ -95,9 +95,7 @@ public class BinnedFilesMerger {
 				}
 			}
 		} finally {
-			for (OutputStream os : outputStreams) {
-				closeQuietly(os);
-			}
+			outputStreams.forEach(IOUtils::closeQuietly);
 		}
 
 	}

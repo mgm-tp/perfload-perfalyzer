@@ -15,7 +15,10 @@
  */
 package com.mgmtp.perfload.perfalyzer.binning;
 
-import static org.apache.commons.io.IOUtils.closeQuietly;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
+import com.mgmtp.perfload.perfalyzer.util.ChannelManager;
+import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,15 +26,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Scanner;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
-import com.mgmtp.perfload.perfalyzer.util.ChannelManager;
-import com.mgmtp.perfload.perfalyzer.util.FileNamingStrategy;
-import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
+import static org.apache.commons.io.IOUtils.closeQuietly;
 
 /**
  * Performs binning and aggregation tasks.
- * 
+ *
  * @author ctchinda
  */
 public class Binner {
@@ -42,11 +41,11 @@ public class Binner {
 
 	/**
 	 * @param sourceDir
-	 *            the source directory where normalized files are located
+	 * 		the source directory where normalized files are located
 	 * @param destDir
-	 *            the destination directory
+	 * 		the destination directory
 	 * @param binningStrategy
-	 *            the strategy that contains the binning logic
+	 * 		the strategy that contains the binning logic
 	 */
 	public Binner(final File sourceDir, final File destDir, final BinningStrategy binningStrategy) {
 		this.sourceDir = sourceDir;
@@ -56,32 +55,22 @@ public class Binner {
 
 	/**
 	 * Performs the binning operation on the specified file.
-	 * 
+	 *
 	 * @param file
-	 *            the file to be binned and/or aggregated; must be relative to the source directory
+	 * 		the file to be binned and/or aggregated; must be relative to the source directory
 	 */
 	public void binFile(final PerfAlyzerFile file) throws IOException {
-		FileInputStream fis = null;
 		FileOutputStream fos = null;
-		ChannelManager channelManager = new ChannelManager(destDir, new FileNamingStrategy() {
-			@Override
-			public PerfAlyzerFile createFileName(final String channelKey) {
-				return file.copy().addFileNamePart(channelKey);
-			}
-		});
-		try {
-			fis = new FileInputStream(new File(sourceDir, file.getFile().getPath()));
+		try (FileInputStream fis = new FileInputStream(new File(sourceDir, file.getFile().getPath()));
+			 ChannelManager channelManager = new ChannelManager(destDir, channelKey -> file.copy().addFileNamePart(channelKey))) {
+
 			Scanner scanner = new Scanner(fis.getChannel(), Charsets.UTF_8.name());
-
 			if (binningStrategy.needsBinning()) {
-
 				File destFile = new File(destDir, binningStrategy.transformDefautBinnedFilePath(file));
 				Files.createParentDirs(destFile);
 				fos = new FileOutputStream(destFile);
-
 				binningStrategy.binData(scanner, fos.getChannel());
 			} else {
-
 				// if binning is not necessary, no channel is provided
 				binningStrategy.binData(scanner, null);
 			}
@@ -89,8 +78,6 @@ public class Binner {
 			binningStrategy.aggregateData(channelManager);
 		} finally {
 			closeQuietly(fos);
-			closeQuietly(channelManager);
-			closeQuietly(fis);
 		}
 	}
 }

@@ -15,44 +15,39 @@
  */
 package com.mgmtp.perfload.perfalyzer.binning;
 
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_REQUEST_TYPE;
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_RESULT;
-import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
-import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
+import com.google.common.base.Charsets;
+import com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants;
+import com.mgmtp.perfload.perfalyzer.util.ChannelManager;
+import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
+import org.apache.commons.lang3.text.StrBuilder;
+import org.apache.commons.math3.stat.StatUtils;
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
 import java.text.NumberFormat;
 import java.util.Scanner;
 
-import org.apache.commons.lang3.text.StrBuilder;
-import org.apache.commons.math3.stat.StatUtils;
-
-import com.google.common.base.Charsets;
-import com.google.common.collect.Collections2;
-import com.google.common.primitives.Doubles;
-import com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants;
-import com.mgmtp.perfload.perfalyzer.util.ChannelManager;
-import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
-import com.mgmtp.perfload.perfalyzer.util.PerfFunctions;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_REQUEST_TYPE;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_RESULT;
+import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
+import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
 
 /**
  * Binning implementation for measuring logs.
- * 
+ *
  * @author ctchinda $
  */
 public class MeasuringAggregatedRequestsBinningStrategy extends AbstractBinningStrategy {
 
-	public MeasuringAggregatedRequestsBinningStrategy(final NumberFormat intNumberFormat,
-			final NumberFormat floatNumberFormat) {
-		super(intNumberFormat, floatNumberFormat);
+	public MeasuringAggregatedRequestsBinningStrategy(final long startOfFirstBin, final NumberFormat intNumberFormat, final NumberFormat floatNumberFormat) {
+		super(startOfFirstBin, intNumberFormat, floatNumberFormat);
 	}
 
 	@Override
 	public void binData(final Scanner scanner, final WritableByteChannel destChannel) throws IOException {
-		MemoryBinManager binSecondManager = new MemoryBinManager(PerfAlyzerConstants.BIN_SIZE_MILLIS_1_SECOND);
-		MemoryBinManager binMinuteManager = new MemoryBinManager(PerfAlyzerConstants.BIN_SIZE_MILLIS_1_MINUTE);
+		BinManager binSecondManager = new BinManager(startOfFirstBin, PerfAlyzerConstants.BIN_SIZE_MILLIS_1_SECOND);
+		BinManager binMinuteManager = new BinManager(startOfFirstBin, PerfAlyzerConstants.BIN_SIZE_MILLIS_1_MINUTE);
 
 		int requestCounter = 0;
 		int errorCounter = 0;
@@ -65,25 +60,23 @@ public class MeasuringAggregatedRequestsBinningStrategy extends AbstractBinningS
 
 			if (!"AGENT".equals(tokens[MEASURING_NORMALIZED_COL_REQUEST_TYPE])) {
 				requestCounter++;
-				binSecondManager.addTimestamp(timestampMillis);
-				binMinuteManager.addTimestamp(timestampMillis);
+				binSecondManager.addValue(timestampMillis);
+				binMinuteManager.addValue(timestampMillis);
 			}
 			if ("ERROR".equals(tokens[MEASURING_NORMALIZED_COL_RESULT])) {
 				errorCounter++;
 			}
 		}
 
-		binSecondManager.completeLastBin();
-		binMinuteManager.completeLastBin();
+//		binSecondManager.completeLastBin();
+//		binMinuteManager.completeLastBin();
 
-		double[] requestsPerSecond = Doubles.toArray(Collections2.transform(binSecondManager.getBins().values(),
-				PerfFunctions.longToDouble()));
+		double[] requestsPerSecond = binSecondManager.countStream().asDoubleStream().toArray();//   Doubles.toArray(binSecondManager.getBins().values().stream().map(longToDouble()).collect(toList()));
 		double minRequestsPerSecond = StatUtils.min(requestsPerSecond);
 		double medianRequestsPerSecond = StatUtils.percentile(requestsPerSecond, 50d);
 		double maxRequestsPerSecond = StatUtils.max(requestsPerSecond);
 
-		double[] requestsPerMinute = Doubles.toArray(Collections2.transform(binMinuteManager.getBins().values(),
-				PerfFunctions.longToDouble()));
+		double[] requestsPerMinute = binMinuteManager.countStream().asDoubleStream().toArray(); // Doubles.toArray(binMinuteManager.getBins().values().stream().map(longToDouble()).collect(toList()));
 		double minRequestsPerMinute = StatUtils.min(requestsPerMinute);
 		double medianRequestsPerMinute = StatUtils.percentile(requestsPerMinute, 50d);
 		double maxRequestsPerMinute = StatUtils.max(requestsPerMinute);

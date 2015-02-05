@@ -8,3 +8,8 @@ logs
 /input
 /test-output
 /*.iml
+/.idea
+.sass-cache
+/ui
+/distribution/assets/stylesheets/perfalyzer.css
+/distribution/assets/stylesheets/perfalyzer.css.map

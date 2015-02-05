@@ -15,100 +15,126 @@
  */
 package com.mgmtp.perfload.perfalyzer.reporting;
 
-import java.util.List;
-
 import com.googlecode.jatl.HtmlWriter;
+
+import java.util.List;
 
 /**
  * @author rnaegele
  */
 public class ContentItem extends HtmlWriter {
 
+	private final String tab;
 	private final int itemIndex;
 	private final String itemTitle;
 	private final TableData tableData;
+	private final String topLinkName;
 	private final String plotSrc;
 
-	public ContentItem(final int itemIndex, final String itemTitle, final TableData tableData, final String plotSrc) {
+	public ContentItem(final String tab, final int itemIndex, final String itemTitle, final TableData tableData,
+			final String plotSrc, final String topLinkName) {
+		this.tab = tab;
 		this.itemIndex = itemIndex;
 		this.itemTitle = itemTitle;
 		this.tableData = tableData;
 		this.plotSrc = plotSrc != null ? plotSrc.replace('\\', '/') : null;
+		this.topLinkName = topLinkName;
 	}
 
 	@Override
 	protected final void build() {
 		//@formatter:off
 
-		div().classAttr("accordion-group").id("accordion" + itemIndex);
-			div().classAttr("accordion-heading");
-				a().classAttr("accordion-toggle").attr("data-toggle", "collapse", "data-parent", "#accordion").href("#collapse" + itemIndex);
-					text(itemTitle);
+		div().classAttr("perf-panel").id(tab + "_" + itemIndex);
+			div().classAttr("perf-panel-heading");
+				div().classAttr("perf-row");
+					div().classAttr("perf-col-10 perf-panel-title").text(itemTitle).end();
+//					div().classAttr("perf-col-6");
+//						if (tabNames.size() > 1) {
+//							div().classAttr("perf-tabs");
+//								ul().attr("role", "tablist");
+//								boolean active = true;
+//								for (String tab : tabNames) {
+//									li().attr("role", "presentation");
+//										if (active) {
+//											classAttr("active");
+//											active = false;
+//										}
+//										a().href("#" + tab).attr("data-toggle", "tab", "role", "tab").text(tab).end();
+//									end();
+//								}
+//								end();
+//							end();
+//						}
+//					end();
+					div().classAttr("perf-col-2");
+						div().classAttr("perf-top-link");
+							a().href("#").text(topLinkName).end();
+						end();
+					end();
 				end();
 			end();
-			div().id("collapse" + itemIndex).classAttr("accordion-body collapse in");
-				div().classAttr("accordion-inner");
-					if (tableData != null) {
-						div().classAttr("row-fluid");
-							boolean imageInNewRow = tableData.isImageInNewRow();
-							div().classAttr(imageInNewRow || plotSrc == null ? "span12" : "span5");
-								table().classAttr("table table-bordered table-condensed table-striped");
-									int valueColumnsCount = tableData.getValueColumnsCount();
-									int colCount = tableData.getHeaders().size();
-									int firstValueColumnIndex = colCount - valueColumnsCount;
+			div().classAttr("perf-panel-body");
+				if (tableData != null) {
+					div().classAttr("perf-row");
+						boolean imageInNewRow = tableData.isImageInNewRow();
+						div().classAttr(imageInNewRow || plotSrc == null ? "perf-span-all" : "perf-col-left");
+							table().classAttr("perf-data-table");
+								int valueColumnsCount = tableData.getValueColumnsCount();
+								int colCount = tableData.getHeaders().size();
+								int firstValueColumnIndex = colCount - valueColumnsCount;
 
-									thead();
-										tr();
+								thead();
+									tr();
 
-										for (int i = 0; i < colCount; ++i) {
-											th();
-											if (i >= firstValueColumnIndex) {
-												style("text-align: right;");
-											}
-											text(tableData.getHeaders().get(i));
-											end();
+									for (int i = 0; i < colCount; ++i) {
+										th();
+										if (i >= firstValueColumnIndex) {
+											style("text-align: right;");
 										}
-
-										end();
-									end();
-
-									tbody();
-
-									for (List<String> rowData : tableData.getRowData()) {
-										tr();
-
-										for (int i = 0; i < colCount; ++i) {
-											td();
-											if (i >= firstValueColumnIndex) {
-												style("text-align: right;");
-											}
-											text(rowData.get(i));
-											end();
-										}
-
+										text(tableData.getHeaders().get(i));
 										end();
 									}
 
 									end();
 								end();
-							end();
-							if (plotSrc != null) {
-								if (!imageInNewRow) {
-									div().classAttr("span7");
-										img().src(plotSrc).alt(plotSrc);
+
+								tbody();
+
+								for (List<String> rowData : tableData.getRowData()) {
+									tr();
+
+									for (int i = 0; i < colCount; ++i) {
+										td();
+										if (i >= firstValueColumnIndex) {
+											style("text-align: right;");
+										}
+										text(rowData.get(i));
+										end();
+									}
+
 									end();
 								}
-							}
-						end();
-					}
-					if (tableData == null || tableData.isImageInNewRow()) {
-						div().classAttr("row-fluid");
-							div().classAttr("span12");
-								img().src(plotSrc).alt(plotSrc);
+
+								end();
 							end();
 						end();
-					}
-				end();
+						if (plotSrc != null) {
+							if (!imageInNewRow) {
+								div().classAttr("perf-col-right");
+									img().src(plotSrc).alt(plotSrc);
+								end();
+							}
+						}
+					end();
+				}
+				if (tableData == null || tableData.isImageInNewRow()) {
+					div().classAttr("perf-row");
+						div().classAttr("perf-span-all");
+							img().src(plotSrc).alt(plotSrc);
+						end();
+					end();
+				}
 			end();
 		end();
 

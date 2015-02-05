@@ -93,7 +93,7 @@ public class EmailReporter {
 	public EmailReporter(final TestMetadata testMetadata, @ReportPreparationDir final File soureDir, final ResourceBundle resourceBundle,
 			final Locale locale, @Nullable @ReportsBaseUrl final String reportsBaseUrl, @RelativeDestDir final File destDir,
 			@EmailFrom final String fromAddress, @EmailTo final List<String> toAddresses, @SmtpProps final Properties smtpProps,
-			@SubjectProps final Properties subjectProps, @Nullable Authenticator authenticator,
+			@SubjectProps final Properties subjectProps, @Nullable final Authenticator authenticator,
 			@MaxEmailHistoryItems final int maxHistoryItems, final Map<String, List<Pattern>> reportContentsConfigMap) {
 		this.testMetadata = testMetadata;
 		this.soureDir = soureDir;
@@ -192,7 +192,7 @@ public class EmailReporter {
 			StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
 			tokenizer.setDelimiterChar(DELIMITER);
 
-			for (String line = null; (line = br.readLine()) != null; ) {
+			for (String line; (line = br.readLine()) != null; ) {
 				tokenizer.reset(line);
 				List<String> tokenList = tokenizer.getTokenList();
 				rows.add(tokenList);

@@ -15,32 +15,6 @@
  */
 package com.mgmtp.perfload.perfalyzer.workflow;
 
-import static com.google.common.collect.FluentIterable.from;
-import static com.google.common.collect.Lists.newArrayList;
-import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.fileNameStartsWith;
-import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.perfAlyzerFileNameContains;
-import static org.apache.commons.io.FileUtils.copyFile;
-import static org.apache.commons.io.FilenameUtils.getBaseName;
-import static org.apache.commons.io.FilenameUtils.getExtension;
-import static org.apache.commons.io.FilenameUtils.getPath;
-import static org.apache.commons.lang3.StringUtils.split;
-import static org.apache.commons.lang3.StringUtils.substringAfter;
-import static org.apache.commons.lang3.StringUtils.trimToNull;
-
-import java.io.File;
-import java.io.IOException;
-import java.text.NumberFormat;
-import java.text.ParseException;
-import java.util.List;
-import java.util.ResourceBundle;
-
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-
-import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.lang3.text.StrBuilder;
-
 import com.google.common.collect.ImmutableList;
 import com.mgmtp.perfload.perfalyzer.PerfAlyzerException;
 import com.mgmtp.perfload.perfalyzer.annotations.FloatFormat;
@@ -54,6 +28,31 @@ import com.mgmtp.perfload.perfalyzer.util.MemoryFormat;
 import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
 import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
 import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.text.StrBuilder;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.io.File;
+import java.io.IOException;
+import java.text.NumberFormat;
+import java.util.Collections;
+import java.util.List;
+import java.util.ResourceBundle;
+
+import static com.mgmtp.perfload.perfalyzer.util.DirectoryLister.listFiles;
+import static com.mgmtp.perfload.perfalyzer.util.DirectoryLister.listPerfAlyzerFiles;
+import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.fileNameStartsWith;
+import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.perfAlyzerFileNameContains;
+import static java.util.stream.Collectors.toList;
+import static org.apache.commons.io.FileUtils.copyFile;
+import static org.apache.commons.io.FilenameUtils.getBaseName;
+import static org.apache.commons.io.FilenameUtils.getExtension;
+import static org.apache.commons.io.FilenameUtils.getPath;
+import static org.apache.commons.lang3.StringUtils.split;
+import static org.apache.commons.lang3.StringUtils.substringAfter;
+import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 /**
  * @author rnaegele
@@ -64,95 +63,83 @@ public class GcLogWorkflow extends AbstractWorkflow {
 	private final Provider<MemoryFormat> memoryFormatProvider;
 
 	@Inject
-	public GcLogWorkflow(final TimestampNormalizer timestampNormalizer, final List<Marker> markers,
-			final @IntFormat Provider<NumberFormat> intNumberFormatProvider,
-			final @FloatFormat Provider<NumberFormat> floatNumberFormatProvider,
-			final List<DisplayData> displayDataList, final ResourceBundle resourceBundle, final PlotCreator plotCreator,
-			final TestMetadata testMetadata, final Provider<MemoryFormat> memoryFormatProvider) {
-		super(timestampNormalizer, markers, intNumberFormatProvider, floatNumberFormatProvider, displayDataList,
-				resourceBundle, testMetadata, plotCreator);
+	public GcLogWorkflow(final TimestampNormalizer timestampNormalizer, @IntFormat final Provider<NumberFormat> intNumberFormatProvider,
+			@FloatFormat final Provider<NumberFormat> floatNumberFormatProvider, final List<DisplayData> displayDataList,
+			final ResourceBundle resourceBundle, final PlotCreator plotCreator, final TestMetadata testMetadata,
+			final Provider<MemoryFormat> memoryFormatProvider) {
+		super(timestampNormalizer, intNumberFormatProvider, floatNumberFormatProvider, displayDataList, resourceBundle, testMetadata, plotCreator);
 		this.memoryFormatProvider = memoryFormatProvider;
 	}
 
 	@Override
-	public List<Runnable> getNormalizationTasks(final File inputDir, final List<File> inputFiles, final File outputDir) {
-		List<Runnable> tasks = newArrayList();
+	public List<Runnable> getNormalizationTasks(final File inputDir, final File outputDir) {
+		List<File> inputFiles = listFiles(inputDir);
+		return inputFiles.stream().filter(fileNameStartsWith("gclog")).map(file -> {
+			Runnable task = () -> {
+				String filePath = file.getPath();
+				String[] pathElements = split(getPath(filePath), SystemUtils.FILE_SEPARATOR); // strip out dir
 
-		for (final File file : from(inputFiles).filter(fileNameStartsWith("gclog"))) {
-			Runnable task = new Runnable() {
-				@Override
-				public void run() {
-					String filePath = file.getPath();
-					String[] pathElements = split(getPath(filePath), SystemUtils.FILE_SEPARATOR); // strip out dir
-
-					StrBuilder sb = new StrBuilder();
-					for (int i = 0; i < pathElements.length; ++i) {
-						if (i == 1) {
-							continue; // strip out dir, e. g. perfmon-logs, measuring-logs
-						}
-						sb.appendSeparator(SystemUtils.FILE_SEPARATOR);
-						sb.append(pathElements[i]);
+				StrBuilder sb = new StrBuilder();
+				for (int i = 0; i < pathElements.length; ++i) {
+					if (i == 1) {
+						continue; // strip out dir, e. g. perfmon-logs, measuring-logs
 					}
-					String dirPath = sb.toString();
-
-					String s = trimToNull(substringAfter(getBaseName(filePath), "gclog"));
-					File destFile = new File(outputDir, dirPath + SystemUtils.FILE_SEPARATOR + "[gclog]"
-							+ (s != null ? "[" + s + "]." : ".")
-							+ getExtension(filePath));
-
-					try {
-						copyFile(new File(inputDir, file.getPath()), destFile);
-					} catch (IOException ex) {
-						throw new PerfAlyzerException("Error copying file: " + file, ex);
-					}
+					sb.appendSeparator(SystemUtils.FILE_SEPARATOR);
+					sb.append(pathElements[i]);
 				}
-			};
-			tasks.add(task);
-		}
+				String dirPath = sb.toString();
 
-		return ImmutableList.copyOf(tasks);
-	}
-
-	@Override
-	public List<Runnable> getBinningTasks(final File inputDir, final List<PerfAlyzerFile> inputFiles, final File outputDir) {
-		List<Runnable> tasks = newArrayList();
-
-		for (final PerfAlyzerFile file : from(inputFiles).filter(perfAlyzerFileNameContains("[gclog]"))) {
-			Runnable task = new Runnable() {
-				@Override
-				public void run() {
-					try {
-						copyFile(new File(inputDir, file.getFile().getPath()), new File(outputDir, file.getFile().getPath()));
-					} catch (IOException ex) {
-						throw new PerfAlyzerException("Error copying file: " + file, ex);
-					}
-				}
-			};
-			tasks.add(task);
-		}
-
-		return ImmutableList.copyOf(tasks);
-	}
-
-	@Override
-	public List<Runnable> getReportPreparationTasks(final File inputDir, final List<PerfAlyzerFile> inputFiles,
-			final File outputDir) {
-		Runnable task = new Runnable() {
-			@Override
-			public void run() {
-				log.info("Preparing report data...");
+				String s = trimToNull(substringAfter(getBaseName(filePath), "gclog"));
+				File destFile = new File(outputDir, dirPath + SystemUtils.FILE_SEPARATOR + "[gclog]"
+						+ (s != null ? "[" + s + "]." : ".")
+						+ getExtension(filePath));
 
 				try {
-					GcLogReportPreparationStrategy strategy = new GcLogReportPreparationStrategy(
-							intNumberFormatProvider.get(), floatNumberFormatProvider.get(), displayDataList, resourceBundle,
-							plotCreator, testMetadata, timestampNormalizer, memoryFormatProvider.get());
-					final ReporterPreparator reporter = new ReporterPreparator(inputDir, outputDir, strategy);
-					reporter.processFiles(from(inputFiles).filter(perfAlyzerFileNameContains("[gclog]")).toList());
+					copyFile(new File(inputDir, file.getPath()), destFile);
 				} catch (IOException ex) {
-					throw new PerfAlyzerException("Error creating perfMon report files", ex);
-				} catch (ParseException ex) {
-					throw new PerfAlyzerException("Error creating perfMon report files", ex);
+					throw new PerfAlyzerException("Error copying file: " + file, ex);
 				}
+			};
+			return task;
+		}).collect(toList());
+	}
+
+	@Override
+	public List<Runnable> getBinningTasks(final File inputDir, final File outputDir, final Marker marker) {
+		if (marker != null) {
+			// markers need to be treated in report preparation task for GC logs
+			return Collections.emptyList();
+		}
+		List<PerfAlyzerFile> inputFiles = listPerfAlyzerFiles(inputDir);
+		return inputFiles.stream().filter(perfAlyzerFileNameContains("[gclog]")).map(file -> {
+			Runnable task = () -> {
+				try {
+					copyFile(new File(inputDir, file.getFile().getPath()), new File(outputDir, file.getFile().getPath()));
+				} catch (IOException ex) {
+					throw new PerfAlyzerException("Error copying file: " + file, ex);
+				}
+			};
+			return task;
+		}).collect(toList());
+	}
+
+	@Override
+	public List<Runnable> getReportPreparationTasks(final File inputDir, final File outputDir, final Marker marker) {
+		Runnable task = () -> {
+			log.info("Preparing report data...");
+
+			try {
+				GcLogReportPreparationStrategy strategy = new GcLogReportPreparationStrategy(
+						intNumberFormatProvider.get(), floatNumberFormatProvider.get(), displayDataList, resourceBundle,
+						plotCreator, testMetadata, timestampNormalizer, memoryFormatProvider.get(), marker,
+						rangeFromMarker(marker)
+				);
+				ReporterPreparator reporter = new ReporterPreparator(inputDir, outputDir, strategy);
+
+				List<PerfAlyzerFile> inputFiles = listPerfAlyzerFiles(inputDir);
+				reporter.processFiles(inputFiles.stream().filter(perfAlyzerFileNameContains("[gclog]")).collect(toList()));
+			} catch (IOException ex) {
+				throw new PerfAlyzerException("Error creating perfMon report files", ex);
 			}
 		};
 

@@ -15,15 +15,14 @@
  */
 package com.mgmtp.perfload.perfalyzer.reportpreparation;
 
-import java.text.NumberFormat;
-import java.util.List;
-import java.util.ResourceBundle;
-
+import com.google.common.collect.ImmutableList;
+import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.ImmutableList;
-import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
+import java.text.NumberFormat;
+import java.util.List;
+import java.util.ResourceBundle;
 
 /**
  * @author rnaegele
@@ -38,14 +37,16 @@ abstract class AbstractReportPreparationStrategy implements ReportPreparationStr
 	protected final ResourceBundle resourceBundle;
 	protected final PlotCreator plotCreator;
 	protected final TestMetadata testMetadata;
+	protected final DataRange dataRange;
 
-	protected AbstractReportPreparationStrategy(final NumberFormat intNumberFormat,
-			final NumberFormat floatNumberFormat, final List<DisplayData> displayDataList,
-			final ResourceBundle resourceBundle, final PlotCreator plotCreator, final TestMetadata testMetadata) {
+	protected AbstractReportPreparationStrategy(final NumberFormat intNumberFormat, final NumberFormat floatNumberFormat,
+			final List<DisplayData> displayDataList, final ResourceBundle resourceBundle, final PlotCreator plotCreator,
+			final TestMetadata testMetadata, final DataRange dataRange) {
 		this.intNumberFormat = intNumberFormat;
 		this.floatNumberFormat = floatNumberFormat;
 		this.plotCreator = plotCreator;
 		this.testMetadata = testMetadata;
+		this.dataRange = dataRange;
 		this.displayDataList = ImmutableList.copyOf(displayDataList);
 		this.resourceBundle = resourceBundle;
 	}

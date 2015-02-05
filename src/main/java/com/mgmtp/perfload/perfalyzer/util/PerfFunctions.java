@@ -20,13 +20,16 @@ import static org.apache.commons.lang3.StringUtils.substringAfter;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.function.Function;
 
-import com.google.common.base.Function;
 
 /**
  * @author rnaegele
  */
 public class PerfFunctions {
+
+	private PerfFunctions() {
+	}
 
 	public static Function<File, File> toParentFile() {
 		return new ToParentFile();

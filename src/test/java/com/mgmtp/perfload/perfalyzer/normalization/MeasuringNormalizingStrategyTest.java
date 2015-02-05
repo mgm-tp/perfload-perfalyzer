@@ -15,22 +15,21 @@
  */
 package com.mgmtp.perfload.perfalyzer.normalization;
 
-import com.google.common.collect.ImmutableList;
-import com.mgmtp.perfload.perfalyzer.util.ChannelData;
-import com.mgmtp.perfload.perfalyzer.util.Marker;
-import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static com.google.common.collect.Iterables.getOnlyElement;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-import static com.google.common.collect.Iterables.getOnlyElement;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import com.mgmtp.perfload.perfalyzer.util.ChannelData;
+import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
 
 /**
  * @author ctchinda
@@ -63,9 +62,8 @@ public class MeasuringNormalizingStrategyTest {
 	@Test(dataProvider = "testdata")
 	public void testNormalization(final String input, final String output) throws NormalizationException {
 		NormalizingStrategy strategy = new MeasuringNormalizingStrategy(
-				new TimestampNormalizer(ZonedDateTime.of(2000, 1, 1, 0, 0, 0, 0, ZoneId.ofOffset("UTC", ZoneOffset.UTC)), ZonedDateTime.now(),
-						0), ImmutableList.<Marker>of());
-		List<ChannelData> result = strategy.normalizeLine("", input);
+				new TimestampNormalizer(ZonedDateTime.of(2000, 1, 1, 0, 0, 0, 0, ZoneId.ofOffset("UTC", ZoneOffset.UTC)), ZonedDateTime.now(), 0));
+		List<ChannelData> result = strategy.normalizeLine(input);
 		ChannelData channel = getOnlyElement(result);
 		assertThat("channel key", channel.getChannelKey(), is(equalTo("testoperation")));
 		assertThat(channel.getValue(), equalTo(output));

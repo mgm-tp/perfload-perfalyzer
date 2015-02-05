@@ -15,12 +15,12 @@
  */
 package com.mgmtp.perfload.perfalyzer.binning;
 
-import static com.google.common.collect.Maps.newHashMap;
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_ERROR_MSG;
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_RESULT;
-import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
-import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
+import com.google.common.base.Charsets;
+import com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants;
+import com.mgmtp.perfload.perfalyzer.util.ChannelManager;
+import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
+import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.commons.lang3.text.StrBuilder;
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
@@ -29,13 +29,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 
-import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.commons.lang3.text.StrBuilder;
-
-import com.google.common.base.Charsets;
-import com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants;
-import com.mgmtp.perfload.perfalyzer.util.ChannelManager;
-import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
+import static com.google.common.collect.Maps.newHashMap;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_ERROR_MSG;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_RESULT;
+import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
+import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
 
 /**
  * @author rnaegele
@@ -44,15 +43,13 @@ public class ErrorCountBinningStragegy extends AbstractBinningStrategy {
 
 	private final Map<String, MutableInt> errorsByType = newHashMap();
 
-	public ErrorCountBinningStragegy(final NumberFormat intNumberFormat,
-			final NumberFormat floatNumberFormat) {
-		super(intNumberFormat, floatNumberFormat);
+	public ErrorCountBinningStragegy(final long startOfFirstBin, final NumberFormat intNumberFormat, final NumberFormat floatNumberFormat) {
+		super(startOfFirstBin, intNumberFormat, floatNumberFormat);
 	}
 
 	@Override
 	public void binData(final Scanner scanner, final WritableByteChannel destChannel) throws IOException {
-		BinManager binManager = new ChannelBinManager(PerfAlyzerConstants.BIN_SIZE_MILLIS_30_SECONDS, destChannel, "seconds",
-				"count", intNumberFormat);
+		BinManager binManager = new BinManager(startOfFirstBin, PerfAlyzerConstants.BIN_SIZE_MILLIS_30_SECONDS);
 
 		while (scanner.hasNextLine()) {
 			tokenizer.reset(scanner.nextLine());
@@ -61,8 +58,6 @@ public class ErrorCountBinningStragegy extends AbstractBinningStrategy {
 			long timestampMillis = Long.parseLong(tokens[0]);
 
 			boolean isError = "ERROR".equals(tokens[MEASURING_NORMALIZED_COL_RESULT]);
-			binManager.addTimestamp(timestampMillis, isError);
-
 			if (isError) {
 				String errorMsg = tokens[MEASURING_NORMALIZED_COL_ERROR_MSG];
 				MutableInt errorsByTypeCounter = errorsByType.get(errorMsg);
@@ -71,10 +66,12 @@ public class ErrorCountBinningStragegy extends AbstractBinningStrategy {
 					errorsByType.put(errorMsg, errorsByTypeCounter);
 				}
 				errorsByTypeCounter.increment();
+
+				binManager.addValue(timestampMillis);
 			}
 		}
 
-		binManager.completeLastBin();
+		binManager.toCsv(destChannel, "seconds", "count", intNumberFormat);
 	}
 
 	@Override

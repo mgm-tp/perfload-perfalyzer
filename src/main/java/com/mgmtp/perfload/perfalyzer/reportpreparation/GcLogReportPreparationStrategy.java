@@ -20,6 +20,7 @@ import com.mgmtp.perfload.perfalyzer.reportpreparation.NumberDataSet.SeriesPoint
 import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator.AxisType;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator.ChartDimensions;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator.RendererType;
+import com.mgmtp.perfload.perfalyzer.util.Marker;
 import com.mgmtp.perfload.perfalyzer.util.MemoryFormat;
 import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
 import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
@@ -36,7 +37,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.NumberFormat;
-import java.text.ParseException;
 import java.time.ZonedDateTime;
 import java.util.Iterator;
 import java.util.List;
@@ -54,23 +54,24 @@ public class GcLogReportPreparationStrategy extends AbstractReportPreparationStr
 
 	private final TimestampNormalizer timestampNormalizer;
 	private final MemoryFormat memoryFormat;
+	private final Marker marker;
 
 	public GcLogReportPreparationStrategy(final NumberFormat intNumberFormat,
 			final NumberFormat floatNumberFormat, final List<DisplayData> displayDataList,
 			final ResourceBundle resourceBundle, final PlotCreator plotCreator, final TestMetadata testMetadata,
-			final TimestampNormalizer timestampNormalizer, final MemoryFormat memoryFormat) {
-		super(intNumberFormat, floatNumberFormat, displayDataList, resourceBundle, plotCreator, testMetadata);
+			final TimestampNormalizer timestampNormalizer, final MemoryFormat memoryFormat, final Marker marker, final DataRange dataRange) {
+		super(intNumberFormat, floatNumberFormat, displayDataList, resourceBundle, plotCreator, testMetadata, dataRange);
 		this.timestampNormalizer = timestampNormalizer;
 		this.memoryFormat = memoryFormat;
+		this.marker = marker;
 	}
 
 	@Override
-	public void processFiles(final File sourceDir, final File destDir, final List<PerfAlyzerFile> files) throws IOException,
-			ParseException {
+	public void processFiles(final File sourceDir, final File destDir, final List<PerfAlyzerFile> files) throws IOException {
 		for (PerfAlyzerFile f : files) {
 			log.info("Processing file '{}'...", f);
 
-			GCModel origModel = null;
+			GCModel origModel;
 			try (InputStream is = new FileInputStream(new File(sourceDir, f.getFile().getPath()))) {
 				DataReader dataReader = new DataReaderFactory().getDataReader(is);
 				origModel = dataReader.read();
@@ -87,14 +88,15 @@ public class GcLogReportPreparationStrategy extends AbstractReportPreparationStr
 				ZonedDateTime datestamp = event.getDatestamp();
 				if (datestamp == null) {
 					// we assume there are generally no datestamps if the first event does not have one
-					log.error("Unsupported GC log format. Please activate date stamp logging (-XX:+PrintGCDateStamps for Oracle JDK).");
+					log.error(
+							"Unsupported GC log format. Please activate date stamp logging (-XX:+PrintGCDateStamps for Oracle JDK).");
 					break;
 				}
 
 				if (timestampNormalizer.isInRange(datestamp)) {
-					model.add(event);
-				} else {
-					log.debug(event.toString());
+					if (marker == null || marker.isInRange(datestamp)) {
+						model.add(event);
+					}
 				}
 			}
 
@@ -118,13 +120,23 @@ public class GcLogReportPreparationStrategy extends AbstractReportPreparationStr
 					continue;
 				}
 
-				plotCreator.writePlotFile(new File(destDir, f.copy().setExtension("png").getFile().getPath()), AxisType.LINEAR,
-						AxisType.LINEAR, RendererType.LINES, ChartDimensions.WIDE, dataSetHeap, dataSetGcTimes);
+				PerfAlyzerFile perfAlyzerFile = f.copy().setExtension("png");
+				if (marker != null) {
+					perfAlyzerFile.setMarker(marker.getName());
+				}
+				File destFile = new File(destDir, perfAlyzerFile.getFile().getPath());
+				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES, ChartDimensions.WIDE,
+						dataRange, false, dataSetHeap, dataSetGcTimes);
 
 				List<CharSequence> gcLines = newArrayListWithCapacity(2);
 				writeHeader(gcLines);
 				writeData(model, gcLines);
-				writeLines(new File(destDir, f.copy().setExtension("csv").getFile().getPath()), Charsets.UTF_8.name(), gcLines);
+
+				perfAlyzerFile = f.copy().setExtension("csv");
+				if (marker != null) {
+					perfAlyzerFile.setMarker(marker.getName());
+				}
+				writeLines(new File(destDir, perfAlyzerFile.getFile().getPath()), Charsets.UTF_8.name(), gcLines);
 			}
 		}
 	}
@@ -168,10 +180,12 @@ public class GcLogReportPreparationStrategy extends AbstractReportPreparationStr
 											  ? intNumberFormat.format(model.getFullGCPause().getN())
 											  : "n/a");
 		appendEscapedAndQuoted(sb, DELIMITER, model.getFullGCPause().getN() > 0
-											  ? memoryFormat.format(model.getFreedMemoryByFullGC().getSum() / model.getFullGCPause().getSum()) + "/s"
+											  ? memoryFormat.format(
+				model.getFreedMemoryByFullGC().getSum() / model.getFullGCPause().getSum()) + "/s"
 											  : "n/a");
 		appendEscapedAndQuoted(sb, DELIMITER, model.getGCPause().getN() > 0
-											  ? memoryFormat.format(model.getFreedMemoryByGC().getSum() / model.getGCPause().getSum()) + "/s"
+											  ? memoryFormat.format(
+				model.getFreedMemoryByGC().getSum() / model.getGCPause().getSum()) + "/s"
 											  : "n/a");
 		gcLines.add(sb);
 	}

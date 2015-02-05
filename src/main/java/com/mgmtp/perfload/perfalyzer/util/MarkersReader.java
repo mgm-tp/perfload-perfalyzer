@@ -15,19 +15,19 @@
  */
 package com.mgmtp.perfload.perfalyzer.util;
 
-import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
+import org.apache.commons.lang3.text.StrTokenizer;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.time.ZonedDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
-import org.apache.commons.lang3.text.StrTokenizer;
-
-import com.google.common.collect.ImmutableList;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
+import static java.util.stream.Collectors.toList;
 
 /**
  * @author ctchinda
@@ -44,20 +44,22 @@ public class MarkersReader {
 	private static final int COL_MARKER_TYPE = 3;
 
 	private final File inputFile;
+	private final ZonedDateTime testStart;
 
-	public MarkersReader(final File inputFile) {
+	public MarkersReader(final File inputFile, final ZonedDateTime testStart) {
 		this.inputFile = inputFile;
+		this.testStart = testStart;
 	}
 
 	public List<Marker> readMarkers() throws IOException {
-		Map<String, Marker> markers = newHashMapWithExpectedSize(3);
+		Map<String, Marker> markers = new LinkedHashMap<>();
 
 		StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
 		tokenizer.setDelimiterChar(DELIMITER);
 
 		try (FileInputStream fis = new FileInputStream(inputFile)) {
 
-			for (Scanner scanner = new Scanner(fis.getChannel()); scanner.hasNext();) {
+			for (Scanner scanner = new Scanner(fis.getChannel()); scanner.hasNext(); ) {
 				String line = scanner.nextLine();
 				if (line.startsWith("#")) {
 					continue;
@@ -68,24 +70,33 @@ public class MarkersReader {
 				List<String> tokenList = tokenizer.getTokenList();
 
 				if (MARKER.equals(tokenList.get(COL_MARKER))) {
-					String markerName = tokenList.get(COL_MARKER_NAME);
+					// no whitespace allowed in marker in order to avoid issues in HTML
+					String markerName = tokenList.get(COL_MARKER_NAME).replaceAll("\\s+", "_");
 					String markerType = tokenList.get(COL_MARKER_TYPE);
 					long timeMillis = Long.parseLong(tokenList.get(COL_TIMESTAMP));
 
-					if (MARKER_LEFT.equals(markerType)) {
-						Marker marker = new Marker(markerName);
-						markers.put(markerName, marker);
-						marker.setLeftMillis(timeMillis);
-					} else if (MARKER_RIGHT.equals(markerType)) {
-						Marker marker = markers.get(markerName);
-						marker.setRightMillis(timeMillis);
-					} else {
-						throw new IllegalStateException("Invalid marker type: " + markerType);
+					switch (markerType) {
+						case MARKER_LEFT: {
+							Marker marker = new Marker(markerName);
+							markers.put(markerName, marker);
+							marker.setLeftMillis(timeMillis);
+							break;
+						}
+						case MARKER_RIGHT: {
+							Marker marker = markers.get(markerName);
+							marker.setRightMillis(timeMillis);
+							break;
+						}
+						default:
+							throw new IllegalStateException("Invalid marker type: " + markerType);
 					}
 				}
 			}
 
-			return ImmutableList.copyOf(markers.values());
+			return markers.values().stream().map(marker -> {
+				marker.calculateDateTimeFields(testStart);
+				return marker;
+			}).collect(toList());
 		}
 	}
 }

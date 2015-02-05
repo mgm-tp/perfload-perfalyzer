@@ -30,10 +30,7 @@ import java.nio.channels.WritableByteChannel;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Scanner;
-import java.util.regex.Matcher;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Lists.newArrayListWithExpectedSize;
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
 import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
 import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
@@ -45,59 +42,36 @@ import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAn
  */
 public class PerfMonBinningStrategy extends AbstractBinningStrategy {
 
-	private final List<Double> valuesForAggregation = newArrayListWithExpectedSize(3600);
+	private final BinManager binManager;
 	private PerfMonTypeConfig typeConfig;
-	private String type;
 
-	public PerfMonBinningStrategy(final NumberFormat intNumberFormat, final NumberFormat floatNumberFormat) {
-		super(intNumberFormat, floatNumberFormat);
+	public PerfMonBinningStrategy(final long startOfFirstBin, final NumberFormat intNumberFormat, final NumberFormat floatNumberFormat) {
+		super(startOfFirstBin, intNumberFormat, floatNumberFormat);
+		binManager = new BinManager(startOfFirstBin, PerfAlyzerConstants.BIN_SIZE_MILLIS_30_SECONDS);
 	}
 
 	@Override
 	public void binData(final Scanner scanner, final WritableByteChannel destChannel) throws IOException {
-		long lastBinStartMillis = 0;
-
-		List<Double> binValues = newArrayList();
-		int binIndex = 0;
-
 		while (scanner.hasNextLine()) {
-			tokenizer.reset(scanner.nextLine());
+			String line = scanner.nextLine();
+			tokenizer.reset(line);
 			List<String> tokenList = tokenizer.getTokenList();
 
-			long timestampMillis = Long.parseLong(tokenList.get(0));
-
 			if (typeConfig == null) {
-				binIndex = (int) timestampMillis / PerfAlyzerConstants.BIN_SIZE_MILLIS_30_SECONDS;
-
-				// align with bin size
-				lastBinStartMillis = binIndex * PerfAlyzerConstants.BIN_SIZE_MILLIS_30_SECONDS;
-
-				type = tokenList.get(1);
-				typeConfig = determineTypeConfig(type);
-				writeHeader(destChannel);
+				String type = tokenList.get(1);
+				typeConfig = PerfMonTypeConfig.fromString(type);
 			}
 
 			try {
+				long timestampMillis = Long.parseLong(tokenList.get(0));
 				Double value = Double.valueOf(tokenList.get(2));
-				binValues.add(value);
-
-				// save for aggregation
-				valuesForAggregation.add(value);
-
-				long duration = timestampMillis - lastBinStartMillis;
-				if (duration > PerfAlyzerConstants.BIN_SIZE_MILLIS_30_SECONDS) {
-					lastBinStartMillis = timestampMillis;
-					writeBinnedLine(binValues, binIndex++, destChannel);
-					binValues.clear();
-				}
+				binManager.addValue(timestampMillis, value);
 			} catch (NumberFormatException ex) {
 				log.error("Could not parse value {}. Line in perfMon file might be incomplete. Ignoring it.", ex);
 			}
 		}
 
-		if (!binValues.isEmpty()) {
-			writeBinnedLine(binValues, binIndex, destChannel);
-		}
+		binManager.toCsv(destChannel, "seconds", typeConfig.getHeader(), intNumberFormat, typeConfig.getAggregationType());
 	}
 
 	@Override
@@ -117,117 +91,40 @@ public class PerfMonBinningStrategy extends AbstractBinningStrategy {
 		return file.getFile().getPath();
 	}
 
-	private void writeHeader(final WritableByteChannel destChannel) throws IOException {
-		StrBuilder sb = new StrBuilder(50);
-		appendEscapedAndQuoted(sb, DELIMITER, "seconds");
-
-		switch (typeConfig) {
-			case CPU:
-			case IO:
-			case JAVA:
-				appendEscapedAndQuoted(sb, DELIMITER, "mean");
-				break;
-			case MEM:
-			case SWAP:
-				appendEscapedAndQuoted(sb, DELIMITER, "median");
-				break;
-			default:
-				throw new IllegalStateException("Invalid perfMon data type");
-		}
-
-		writeLineToChannel(destChannel, sb.toString(), Charsets.UTF_8);
-	}
-
 	private void writeAggregatedHeader(final WritableByteChannel destChannel) throws IOException {
 		StrBuilder sb = new StrBuilder();
-
-		switch (typeConfig) {
-			case CPU:
-			case IO:
-			case JAVA:
-				appendEscapedAndQuoted(sb, DELIMITER, "min");
-				appendEscapedAndQuoted(sb, DELIMITER, "mean");
-				appendEscapedAndQuoted(sb, DELIMITER, "max");
-				break;
-			case MEM:
-			case SWAP:
-				appendEscapedAndQuoted(sb, DELIMITER, "min");
-				appendEscapedAndQuoted(sb, DELIMITER, "q0.1");
-				appendEscapedAndQuoted(sb, DELIMITER, "q0.5");
-				appendEscapedAndQuoted(sb, DELIMITER, "q0.9");
-				appendEscapedAndQuoted(sb, DELIMITER, "max");
-				break;
-			default:
-				throw new IllegalStateException("Invalid perfMon data type");
-		}
-
-		writeLineToChannel(destChannel, sb.toString(), Charsets.UTF_8);
-	}
-
-	private void writeBinnedLine(final List<Double> binValues, final int binIndex, final WritableByteChannel destChannel)
-			throws IOException {
-
-		StrBuilder sb = new StrBuilder();
-		appendEscapedAndQuoted(sb, DELIMITER, binIndex * PerfAlyzerConstants.BIN_SIZE_MILLIS_30_SECONDS / 1000);
-
-		double[] binValuesArray = Doubles.toArray(binValues);
-
-		switch (typeConfig) {
-			case CPU:
-			case IO:
-			case JAVA:
-				appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(StatUtils.mean(binValuesArray)));
-				break;
-			case MEM:
-			case SWAP:
-				appendEscapedAndQuoted(sb, DELIMITER, intNumberFormat.format(StatUtils.percentile(binValuesArray, 50d)));
-				break;
-			default:
-				throw new IllegalStateException("Invalid perfMon data type");
-		}
-
+		typeConfig.getAggregatedHeaders().forEach(header -> appendEscapedAndQuoted(sb, DELIMITER, header));
 		writeLineToChannel(destChannel, sb.toString(), Charsets.UTF_8);
 	}
 
 	private void writeAggregatedLine(final WritableByteChannel destChannel) throws IOException {
-		if (!valuesForAggregation.isEmpty()) {
-			StrBuilder sb = new StrBuilder();
+		double[] allValues = binManager.flatValuesStream().toArray();
 
-			double[] valuesArray = Doubles.toArray(valuesForAggregation);
-			String min = intNumberFormat.format(Doubles.min(valuesArray));
-			String max = intNumberFormat.format(Doubles.max(valuesArray));
+		StrBuilder sb = new StrBuilder();
 
-			switch (typeConfig) {
-				case CPU:
-				case IO:
-				case JAVA:
-					String mean = intNumberFormat.format(StatUtils.mean(valuesArray));
-					appendEscapedAndQuoted(sb, DELIMITER, min, mean, max);
-					break;
-				case MEM:
-				case SWAP:
-					Percentile percentile = new Percentile();
-					percentile.setData(valuesArray);
-					String q10 = intNumberFormat.format(percentile.evaluate(10d));
-					String q50 = intNumberFormat.format(percentile.evaluate(50d));
-					String q90 = intNumberFormat.format(percentile.evaluate(90d));
-					appendEscapedAndQuoted(sb, DELIMITER, min, q10, q50, q90, max);
-					break;
-				default:
-					throw new IllegalStateException("Invalid perfMon data type");
-			}
+		String min = intNumberFormat.format(Doubles.min(allValues));
+		String max = intNumberFormat.format(Doubles.max(allValues));
 
-			writeLineToChannel(destChannel, sb.toString(), Charsets.UTF_8);
+		switch (typeConfig) {
+			case CPU:
+			case IO:
+			case JAVA:
+				String mean = intNumberFormat.format(StatUtils.mean(allValues));
+				appendEscapedAndQuoted(sb, DELIMITER, min, mean, max);
+				break;
+			case MEM:
+			case SWAP:
+				Percentile percentile = new Percentile();
+				percentile.setData(allValues);
+				String q10 = intNumberFormat.format(percentile.evaluate(10d));
+				String q50 = intNumberFormat.format(percentile.evaluate(50d));
+				String q90 = intNumberFormat.format(percentile.evaluate(90d));
+				appendEscapedAndQuoted(sb, DELIMITER, min, q10, q50, q90, max);
+				break;
+			default:
+				throw new IllegalStateException("Invalid perfMon data type");
 		}
-	}
 
-	private PerfMonTypeConfig determineTypeConfig(final String perfmonType) {
-		for (PerfMonTypeConfig tc : PerfMonTypeConfig.values()) {
-			Matcher matcher = tc.getPattern().matcher(perfmonType);
-			if (matcher.matches()) {
-				return tc;
-			}
-		}
-		throw new IllegalStateException("No binning content found for type: " + perfmonType);
+		writeLineToChannel(destChannel, sb.toString(), Charsets.UTF_8);
 	}
 }

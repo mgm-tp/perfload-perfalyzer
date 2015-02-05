@@ -22,19 +22,12 @@ public class ChannelData {
 
 	private final String channelBaseName;
 	private final String channelKey;
-	private final String marker;
 	private final String value;
 
-	public ChannelData(final String channelBaseName, final String channelKey, final String marker, final String value) {
+	public ChannelData(final String channelBaseName, final String channelKey,final String value) {
 		this.channelBaseName = channelBaseName;
 		this.channelKey = channelKey;
-		this.marker = marker;
 		this.value = value;
-	}
-
-	public ChannelData(final String channelBaseName, final String channelKey, final String value) {
-		this(channelBaseName, channelKey, null, value);
-
 	}
 
 	/**
@@ -49,13 +42,6 @@ public class ChannelData {
 	 */
 	public String getChannelKey() {
 		return channelKey;
-	}
-
-	/**
-	 * @return the marker
-	 */
-	public String getMarker() {
-		return marker;
 	}
 
 	/**

@@ -17,7 +17,6 @@ package com.mgmtp.perfload.perfalyzer.reportpreparation;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.List;
 
 import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
@@ -36,7 +35,7 @@ public class ReporterPreparator {
 		this.reportingStrategy = reportingStrategy;
 	}
 
-	public void processFiles(final List<PerfAlyzerFile> files) throws IOException, ParseException {
+	public void processFiles(final List<PerfAlyzerFile> files) throws IOException {
 		reportingStrategy.processFiles(sourceDir, destDir, files);
 	}
 }

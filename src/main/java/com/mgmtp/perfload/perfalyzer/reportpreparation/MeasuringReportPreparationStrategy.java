@@ -15,39 +15,6 @@
  */
 package com.mgmtp.perfload.perfalyzer.reportpreparation;
 
-import static com.google.common.collect.Lists.newArrayListWithCapacity;
-import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
-import static com.google.common.collect.Sets.newHashSet;
-import static com.google.common.io.Files.createParentDirs;
-import static com.google.common.io.Files.newReader;
-import static com.google.common.io.Files.readLines;
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
-import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
-import static com.mgmtp.perfload.perfalyzer.util.PerfAlyzerUtils.readDataFile;
-import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
-import static java.lang.Math.min;
-import static org.apache.commons.io.FileUtils.copyFile;
-import static org.apache.commons.io.FileUtils.writeLines;
-import static org.apache.commons.lang3.StringUtils.substringAfter;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.channels.FileChannel;
-import java.text.NumberFormat;
-import java.text.ParseException;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.ResourceBundle;
-import java.util.Set;
-
-import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.lang3.text.StrBuilder;
-import org.apache.commons.lang3.text.StrTokenizer;
-
 import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
@@ -61,9 +28,38 @@ import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator.ChartDimensio
 import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator.RendererType;
 import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
 import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.text.StrBuilder;
+import org.apache.commons.lang3.text.StrTokenizer;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.channels.FileChannel;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ResourceBundle;
+import java.util.Set;
+
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Lists.newArrayListWithCapacity;
+import static com.google.common.collect.Sets.newHashSet;
+import static com.google.common.io.Files.createParentDirs;
+import static com.google.common.io.Files.newReader;
+import static com.google.common.io.Files.readLines;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
+import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
+import static com.mgmtp.perfload.perfalyzer.util.PerfAlyzerUtils.readDataFile;
+import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
+import static java.lang.Math.min;
+import static org.apache.commons.io.FileUtils.copyFile;
+import static org.apache.commons.io.FileUtils.writeLines;
+import static org.apache.commons.lang3.StringUtils.substringAfter;
 
 /**
- * 
  * @author rnaegele
  */
 public class MeasuringReportPreparationStrategy extends AbstractReportPreparationStrategy {
@@ -73,14 +69,13 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 	public MeasuringReportPreparationStrategy(final NumberFormat intNumberFormat,
 			final NumberFormat floatNumberFormat, final List<DisplayData> displayDataList,
 			final ResourceBundle resourceBundle, final PlotCreator plotCreator, final TestMetadata testMetadata,
-			final int maxHistoryItems) {
-		super(intNumberFormat, floatNumberFormat, displayDataList, resourceBundle, plotCreator, testMetadata);
+			final DataRange dataRange, final int maxHistoryItems) {
+		super(intNumberFormat, floatNumberFormat, displayDataList, resourceBundle, plotCreator, testMetadata, dataRange);
 		this.maxHistoryItems = maxHistoryItems;
 	}
 
 	@Override
-	public void processFiles(final File sourceDir, final File destDir, final List<PerfAlyzerFile> files) throws IOException,
-			ParseException {
+	public void processFiles(final File sourceDir, final File destDir, final List<PerfAlyzerFile> files) throws IOException {
 		List<MeasuringHandler> handlers = ImmutableList.of(
 				new ByOperationHandler(sourceDir, destDir),
 				new ByOperationAggregatedHandler(sourceDir, destDir),
@@ -91,7 +86,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 				new RequestsPerPeriodByOperationHandler(sourceDir, destDir, PerfAlyzerConstants.BIN_SIZE_MILLIS_1_MINUTE),
 				new RequestsPerPeriodByOperationHandler(sourceDir, destDir, PerfAlyzerConstants.BIN_SIZE_MILLIS_1_SECOND),
 				new ErrorsHandler(sourceDir, destDir)
-				);
+		);
 
 		for (PerfAlyzerFile f : files) {
 			log.info("Processing file '{}'...", f);
@@ -118,14 +113,14 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 			this.destDir = destDir;
 		}
 
-		abstract void processFile(final PerfAlyzerFile paFile) throws IOException, ParseException;
+		abstract void processFile(final PerfAlyzerFile paFile) throws IOException;
 
-		abstract void finishProcessing() throws IOException, ParseException;
+		abstract void finishProcessing() throws IOException;
 	}
 
 	/**
 	 * Copies the quantiles files.
-	 * 
+	 * <p>
 	 * <pre>
 	 * Input:  [measuring][&lt;operation&gt;][quantiles].csv
 	 * Output: [measuring][&lt;operation&gt;][distribution].csv
@@ -141,12 +136,11 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 		}
 
 		@Override
-		void processFile(final PerfAlyzerFile f) throws IOException, ParseException {
+		void processFile(final PerfAlyzerFile f) throws IOException {
 			List<String> fileNameParts = f.getFileNameParts();
-			if (fileNameParts.size() == 3 && fileNameParts.get(2).equals("quantiles")) {
+			if (fileNameParts.size() == 3 && "quantiles".equals(fileNameParts.get(2))) {
 				// Simply copy the file renaming it in order to align it to the plot file
-				File destFile = new File(destDir, f.copy().removeFileNamePart("quantiles").addFileNamePart("distribution")
-						.getFile().getPath());
+				File destFile = new File(destDir, f.copy().removeFileNamePart("quantiles").addFileNamePart("distribution").getFile().getPath());
 				copyFile(new File(sourceDir, f.getFile().getPath()), destFile);
 			}
 		}
@@ -159,7 +153,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 
 	/**
 	 * Creates response time distribution plots.
-	 * 
+	 * <p>
 	 * <pre>
 	 * Input:  [measuring][&lt;operation&gt;][distribution_&lt;index&gt;].csv
 	 * Output: [measuring][&lt;operation&gt;][distribution].png
@@ -177,9 +171,8 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 		void processFile(final PerfAlyzerFile f) throws IOException {
 			List<String> fileNameParts = f.getFileNameParts();
 			if (fileNameParts.size() == 3 && fileNameParts.get(2).startsWith("distribution_")) {
-				// key is the plot file name, i. e. we group effectively by operation and marker
-				String key = f.copy().removeFileNamePart("distribution_*").addFileNamePart("distribution").setExtension("png")
-						.getFile().getPath();
+				// key is the plot file name, i. e. we group effectively by operation
+				String key = f.copy().removeFileNamePart("distribution_*").addFileNamePart("distribution").setExtension("png").getFile().getPath();
 				byTypeMultimap.put(key, f);
 			}
 		}
@@ -201,14 +194,14 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 				}
 
 				plotCreator.writePlotFile(destFile, AxisType.LOGARITHMIC, AxisType.LOGARITHMIC, RendererType.SHAPES,
-						ChartDimensions.LARGE, dataSet);
+						ChartDimensions.LARGE, null, false, dataSet);
 			}
 		}
 	}
 
 	/**
 	 * Binned response times plots.
-	 * 
+	 * <p>
 	 * <pre>
 	 * Input:  [measuring][&lt;operation&gt;][executions].csv
 	 * Output: [measuring][executions].png
@@ -225,7 +218,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 		@Override
 		void processFile(final PerfAlyzerFile f) {
 			List<String> fileNameParts = f.getFileNameParts();
-			if (fileNameParts.size() == 3 && fileNameParts.get(2).equals("executions")) {
+			if (fileNameParts.size() == 3 && "executions".equals(fileNameParts.get(2))) {
 				String operation = fileNameParts.get(1);
 				byOperationMap.put(operation, f);
 			}
@@ -233,45 +226,32 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 
 		@Override
 		void finishProcessing() throws IOException {
-			Map<String, NumberDataSet> dataSets = newHashMapWithExpectedSize(2);
+			NumberDataSet dataSet = new NumberDataSet();
 
+			PerfAlyzerFile destFile = null;
 			for (String key : byOperationMap.keySet()) {
 				for (PerfAlyzerFile f : byOperationMap.get(key)) {
-					String dsKey = f.getMarker();
-					if (!dataSets.containsKey(dsKey)) { // default non-marker key is null, thus containsKey
-						dataSets.put(dsKey, new NumberDataSet());
+					PerfAlyzerFile tmp = f.copy().removeFileNamePart(1).setExtension("png");
+					if (destFile == null) {
+						destFile = tmp;
+					} else {
+						// safety check
+						checkState(destFile.getFile().equals(tmp.getFile()));
 					}
-
-					NumberDataSet dataSet = dataSets.get(dsKey);
 					File file = new File(sourceDir, f.getFile().getPath());
 					List<SeriesPoint> dataList = readDataFile(file, Charsets.UTF_8, intNumberFormat);
 					dataSet.addSeries(key, dataList);
 				}
 			}
 
-			// one default entry (null key) and potentially one entry for each marker
-			for (Entry<String, NumberDataSet> entry : dataSets.entrySet()) {
-				StrBuilder sb = new StrBuilder();
-				sb.append("global");
-				sb.append(SystemUtils.FILE_SEPARATOR);
-				sb.append("[measuring][executions]");
-
-				String marker = entry.getKey();
-				if (marker != null) {
-					sb.append("{").append(marker).append('}');
-				}
-				sb.append(".png");
-
-				File destFile = new File(destDir, sb.toString());
-				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES,
-						ChartDimensions.WIDE, entry.getValue());
-			}
+			plotCreator.writePlotFile(new File(destDir, destFile.getFile().getPath()), AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES,
+					ChartDimensions.WIDE, dataRange, false, dataSet);
 		}
 	}
 
 	/**
 	 * Binned executions by time plots.
-	 * 
+	 * <p>
 	 * <pre>
 	 * Input:  [measuring][&lt;operation&gt;][&lt;fileNamePart&gt;].csv
 	 * Output: [measuring][&lt;fileNamePart&gt;].png
@@ -298,46 +278,33 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 
 		@Override
 		void finishProcessing() throws IOException {
-			Map<String, NumberDataSet> dataSets = newHashMapWithExpectedSize(2);
+			NumberDataSet dataSet = new NumberDataSet();
 
+			PerfAlyzerFile destFile = null;
 			for (String key : byOperationMap.keySet()) {
 				for (PerfAlyzerFile f : byOperationMap.get(key)) {
-					String dsKey = f.getMarker();
-					if (!dataSets.containsKey(dsKey)) { // default non-marker key is null, thus containsKey
-						dataSets.put(dsKey, new NumberDataSet());
+					PerfAlyzerFile tmp = f.copy().removeFileNamePart(1).setExtension("png");
+					if (destFile == null) {
+						destFile = tmp;
+					} else {
+						// safety check
+						checkState(destFile.getFile().equals(tmp.getFile()));
 					}
-
-					NumberDataSet dataSet = dataSets.get(dsKey);
 					File file = new File(sourceDir, f.getFile().getPath());
 					List<SeriesPoint> dataList = readDataFile(file, Charsets.UTF_8, intNumberFormat);
 					dataSet.addSeries(key, dataList);
 				}
 			}
 
-			// one default entry (null key) and potentially one entry for each marker
-			for (Entry<String, NumberDataSet> entry : dataSets.entrySet()) {
-				StrBuilder sb = new StrBuilder();
-				sb.append("global");
-				sb.append(SystemUtils.FILE_SEPARATOR);
-				sb.append("[measuring][" + fileNamePart + "]");
-
-				String marker = entry.getKey();
-				if (marker != null) {
-					sb.append("{").append(marker).append('}');
-				}
-				sb.append(".png");
-
-				File destFile = new File(destDir, sb.toString());
-				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES,
-						ChartDimensions.WIDE, entry.getValue());
-			}
+			plotCreator.writePlotFile(new File(destDir, destFile.getFile().getPath()), AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES,
+					ChartDimensions.WIDE, dataRange, false, dataSet);
 		}
 	}
 
 	/**
 	 * Creates response time csv files. The contents are considered for comparison, thus comparison
 	 * files are updated as well.
-	 * 
+	 * <p>
 	 * <pre>
 	 * Input:  [measuring][&lt;operation&gt;][aggregated].csv
 	 * Output: [measuring][executions].csv
@@ -354,37 +321,31 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 		@Override
 		void processFile(final PerfAlyzerFile f) {
 			List<String> fileNameParts = f.getFileNameParts();
-			if (fileNameParts.size() == 3 && fileNameParts.get(2).equals("aggregated")) {
+			if (fileNameParts.size() == 3 && "aggregated".equals(fileNameParts.get(2))) {
 				String operation = fileNameParts.get(1);
 				byOperationAggregatedMap.put(operation, f);
 			}
 		}
 
-		private File createDestFile(final File parentDir, final String baseDir, final String marker, final String operation) {
-			StrBuilder sb = new StrBuilder();
-			sb.append(baseDir);
-			sb.append(SystemUtils.FILE_SEPARATOR);
-			sb.append("[measuring]");
-			if (operation != null) {
-				sb.append('[').append(operation).append(']');
+		private File createDestFile(final File parentDir, final PerfAlyzerFile sourceFile, final String baseDir, final boolean dropOperationPart) {
+			PerfAlyzerFile result = sourceFile.copy().removeFileNamePart(1);
+			if (dropOperationPart) {
+				result.removeFileNamePart(1);
 			}
-			sb.append("[executions]");
-			if (marker != null) {
-				sb.append('{').append(marker).append('}');
-			}
-			sb.append(".csv");
-			return new File(parentDir, sb.toString());
+			result.addFileNamePart("executions");
+			result.setExtension("csv");
+			return new File(parentDir, new File(baseDir, result.getFile().getName()).getPath());
 		}
 
 		@Override
-		void finishProcessing() throws IOException, ParseException {
+		void finishProcessing() throws IOException {
 			// files in this set already have a header
 			Set<File> overallFiles = newHashSet();
 
 			for (String key : byOperationAggregatedMap.keySet()) {
 				for (PerfAlyzerFile f : byOperationAggregatedMap.get(key)) {
 
-					File destFile = createDestFile(destDir, "global", f.getMarker(), null);
+					File destFile = createDestFile(destDir, f, "global", true);
 
 					try (FileOutputStream fosOverall = new FileOutputStream(destFile, true)) {
 						FileChannel overallChannel = fosOverall.getChannel();
@@ -392,17 +353,16 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 						StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
 						tokenizer.setDelimiterChar(DELIMITER);
 
-						File globalComparisonFile = null;
+						File globalComparisonFile;
 						try (Reader r = newReader(new File(sourceDir, f.getFile().getPath()), Charsets.UTF_8)) {
 							createParentDirs(destFile);
 
 							String operation = f.getFileNameParts().get(1);
-							globalComparisonFile = createDestFile(destDir.getParentFile().getParentFile(), ".comparison",
-									f.getMarker(), operation);
+							globalComparisonFile = createDestFile(destDir.getParentFile().getParentFile(), f, ".comparison", false);
 
 							List<String> comparisonLines;
-							// if file does not exist yet, simply write the header to it first
 
+							// if file does not exist yet, simply write the header to it first
 							StrBuilder sb = new StrBuilder(50);
 							appendEscapedAndQuoted(sb, DELIMITER, "time", "numRequests", "numErrors", "minReqPerSec",
 									"medianReqPerSec", "maxReqPerSec", "minReqPerMin", "medianReqPerMin", "maxReqPerMin",
@@ -432,7 +392,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 
 							// files contain only two lines
 							LineReader lineReader = new LineReader(r);
-							for (String line = null; (line = lineReader.readLine()) != null;) {
+							for (String line; (line = lineReader.readLine()) != null; ) {
 								if (isHeaderLine) {
 									isHeaderLine = false;
 
@@ -451,22 +411,20 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 									writeLineToChannel(overallChannel, sbAggregated.toString(), Charsets.UTF_8);
 
 									StrBuilder sbComparison = new StrBuilder(line.length() + 10);
-									appendEscapedAndQuoted(sbComparison, DELIMITER, testMetadata.getTestStart().toString(),
-											tokens);
+									appendEscapedAndQuoted(sbComparison, DELIMITER, testMetadata.getTestStart().toString(), tokens);
 
 									comparisonLines.add(1, sbComparison.toString());
 
 									// apply max restriction, add 1 for header
-									comparisonLines = comparisonLines
-											.subList(0, min(maxHistoryItems + 1, comparisonLines.size()));
+									comparisonLines = comparisonLines.subList(0,
+											min(maxHistoryItems + 1, comparisonLines.size()));
 
 									writeLines(globalComparisonFile, Charsets.UTF_8.name(), comparisonLines);
 								}
 							}
 						}
 
-						File comparisonFile = new File(destDir, "comparison" + SystemUtils.FILE_SEPARATOR
-								+ globalComparisonFile.getName());
+						File comparisonFile = new File(destDir, "comparison" + SystemUtils.FILE_SEPARATOR + globalComparisonFile.getName());
 						// copy global file to this test's result files
 						copyFile(globalComparisonFile, comparisonFile);
 					}
@@ -477,7 +435,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 
 	/**
 	 * Creates requests per minute plots.
-	 * 
+	 * <p>
 	 * <pre>
 	 * Input:  [measuring][&lt;operation&gt;][requests].csv
 	 * Output: [measuring][requests].png
@@ -496,7 +454,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 		@Override
 		void processFile(final PerfAlyzerFile f) {
 			List<String> fileNameParts = f.getFileNameParts();
-			if (fileNameParts.size() == 4 && fileNameParts.get(2).equals("requests")
+			if (fileNameParts.size() == 4 && "requests".equals(fileNameParts.get(2))
 					&& fileNameParts.get(3).equals(String.valueOf(binSize))) {
 				String operation = fileNameParts.get(1);
 				requestsByOperationMap.put(operation, f);
@@ -505,44 +463,32 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 
 		@Override
 		void finishProcessing() throws IOException {
-			Map<String, NumberDataSet> dataSets = newHashMapWithExpectedSize(2);
+			NumberDataSet dataSet = new NumberDataSet();
 
+			PerfAlyzerFile destFile = null;
 			for (String key : requestsByOperationMap.keySet()) {
 				for (PerfAlyzerFile f : requestsByOperationMap.get(key)) {
-					String dsKey = f.getMarker();
-					if (!dataSets.containsKey(dsKey)) { // default non-marker key is null, thus containsKey
-						dataSets.put(dsKey, new NumberDataSet());
+					PerfAlyzerFile tmp = f.copy().removeFileNamePart(1).setExtension("png");
+					if (destFile == null) {
+						destFile = tmp;
+					} else {
+						// safety check
+						checkState(destFile.getFile().equals(tmp.getFile()));
 					}
-
-					NumberDataSet dataSet = dataSets.get(dsKey);
 					File file = new File(sourceDir, f.getFile().getPath());
 					List<SeriesPoint> dataList = readDataFile(file, Charsets.UTF_8, intNumberFormat);
 					dataSet.addSeries(key, dataList);
 				}
 			}
 
-			for (Entry<String, NumberDataSet> entry : dataSets.entrySet()) {
-				StrBuilder sb = new StrBuilder();
-				sb.append("global");
-				sb.append(SystemUtils.FILE_SEPARATOR);
-				sb.append("[measuring][requests][").append(binSize).append(']');
-
-				String marker = entry.getKey();
-				if (marker != null) {
-					sb.append("{").append(marker).append('}');
-				}
-				sb.append(".png");
-
-				File destFile = new File(destDir, sb.toString());
-				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES, ChartDimensions.WIDE,
-						entry.getValue());
-			}
+			plotCreator.writePlotFile(new File(destDir, destFile.getFile().getPath()), AxisType.LINEAR, AxisType.LINEAR,
+					RendererType.LINES, ChartDimensions.WIDE, dataRange, false, dataSet);
 		}
 	}
 
 	/**
 	 * Creates error files.
-	 * 
+	 * <p>
 	 * <pre>
 	 * Input:  [measuring][&lt;operation&gt;][errorCount].csv, [measuring][&lt;operation&gt;][errorsByType].csv
 	 * Output: [measuring][errors].png, [measuring][errors].csv
@@ -550,86 +496,63 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 	 */
 	class ErrorsHandler extends MeasuringHandler {
 		ListMultimap<String, PerfAlyzerFile> errorCountsByOperationMultimap = ArrayListMultimap.create();
-		ListMultimap<String, PerfAlyzerFile> errorsByTypeByMarkerMultimap = ArrayListMultimap.create();
+		List<PerfAlyzerFile> errorsByType = new ArrayList<>();
 
 		public ErrorsHandler(final File sourceDir, final File destDir) {
 			super(sourceDir, destDir);
 		}
 
 		@Override
-		void processFile(final PerfAlyzerFile f) throws IOException, ParseException {
+		void processFile(final PerfAlyzerFile f) throws IOException {
 			List<String> fileNameParts = f.getFileNameParts();
-			if (fileNameParts.size() == 3 && fileNameParts.get(2).equals("errorCount")) {
+			if (fileNameParts.size() == 3 && "errorCount".equals(fileNameParts.get(2))) {
 				errorCountsByOperationMultimap.put(fileNameParts.get(1), f);
-			} else if (fileNameParts.size() == 3 && fileNameParts.get(2).equals("errorsByType")) {
-				errorsByTypeByMarkerMultimap.put(f.getMarker(), f);
+			} else if (fileNameParts.size() == 3 && "errorsByType".equals(fileNameParts.get(2))) {
+				errorsByType.add(f);
 			}
 		}
 
 		@Override
 		void finishProcessing() throws IOException {
-			Map<String, NumberDataSet> dataSets = newHashMapWithExpectedSize(2);
+			NumberDataSet dataSet = new NumberDataSet();
 
+			PerfAlyzerFile destFile = null;
 			for (String key : errorCountsByOperationMultimap.keySet()) {
 				for (PerfAlyzerFile f : errorCountsByOperationMultimap.get(key)) {
-					String dsKey = f.getMarker();
-					if (!dataSets.containsKey(dsKey)) { // default non-marker key is null, thus containsKey
-						dataSets.put(dsKey, new NumberDataSet());
+					PerfAlyzerFile tmp = f.copy().removeFileNamePart(1).removeFileNamePart(1).addFileNamePart("errors").setExtension("png");
+					if (destFile == null) {
+						destFile = tmp;
+					} else {
+						// safety check
+						checkState(destFile.getFile().equals(tmp.getFile()));
 					}
-
-					NumberDataSet dataSet = dataSets.get(dsKey);
 					File file = new File(sourceDir, f.getFile().getPath());
 					List<SeriesPoint> dataList = readDataFile(file, Charsets.UTF_8, intNumberFormat);
 					dataSet.addSeries(key, dataList);
 				}
 			}
 
-			for (Entry<String, NumberDataSet> entry : dataSets.entrySet()) {
-				StrBuilder sb = new StrBuilder();
-				sb.append("global");
-				sb.append(SystemUtils.FILE_SEPARATOR);
-				sb.append("[measuring][errors]");
+			File targetFile = new File(destDir, destFile.getFile().getPath());
+			plotCreator.writePlotFile(targetFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES, ChartDimensions.DEFAULT,
+					dataRange, false, dataSet);
 
-				String marker = entry.getKey();
-				if (marker != null) {
-					sb.append("{").append(marker).append('}');
-				}
-				sb.append(".png");
+			targetFile = new File(destDir, destFile.copy().setExtension("csv").getFile().getPath());
+			try (FileOutputStream fos = new FileOutputStream(targetFile)) {
+				FileChannel channel = fos.getChannel();
 
-				File destFile = new File(destDir, sb.toString());
-				plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES,
-						ChartDimensions.DEFAULT, entry.getValue());
-			}
+				boolean needsHeader = true;
+				for (PerfAlyzerFile paf : errorsByType) {
+					try (BufferedReader br = Files.newReader(new File(sourceDir, paf.getFile().getPath()), Charsets.UTF_8)) {
 
-			for (String key : errorsByTypeByMarkerMultimap.keySet()) {
-				StrBuilder sb = new StrBuilder();
-				sb.append("global");
-				sb.append(SystemUtils.FILE_SEPARATOR);
-				sb.append("[measuring][errors]");
+						String header = br.readLine();
+						if (needsHeader) {
+							writeLineToChannel(channel, "\"operation\"" + DELIMITER + header, Charsets.UTF_8);
+							needsHeader = false;
+						}
 
-				if (key != null) {
-					sb.append("{").append(key).append('}');
-				}
-				sb.append(".csv");
-
-				File destFile = new File(destDir, sb.toString());
-				try (FileOutputStream fos = new FileOutputStream(destFile)) {
-					FileChannel channel = fos.getChannel();
-
-					boolean needsHeader = true;
-					for (PerfAlyzerFile paf : errorsByTypeByMarkerMultimap.get(key)) {
-						try (BufferedReader br = Files.newReader(new File(sourceDir, paf.getFile().getPath()), Charsets.UTF_8)) {
-
-							String header = br.readLine();
-							if (needsHeader) {
-								writeLineToChannel(channel, "\"operation\"" + DELIMITER + header, Charsets.UTF_8);
-								needsHeader = false;
-							}
-
-							String operation = paf.getFileNameParts().get(1);
-							for (String line = null; (line = br.readLine()) != null;) {
-								writeLineToChannel(channel, "\"" + operation + "\"" + DELIMITER + line, Charsets.UTF_8);
-							}
+						String operation = paf.getFileNameParts().get(1);
+						for (String line; (line = br.readLine()) != null; ) {
+							writeLineToChannel(channel, "\"" + operation + "\"" + DELIMITER + line, Charsets.UTF_8);
 						}
 					}
 				}

@@ -24,6 +24,6 @@ import com.mgmtp.perfload.perfalyzer.util.ChannelData;
  */
 public interface NormalizingStrategy {
 
-	List<ChannelData> normalizeLine(String fileName, String line) throws NormalizationException;
+	List<ChannelData> normalizeLine(String line);
 
 }

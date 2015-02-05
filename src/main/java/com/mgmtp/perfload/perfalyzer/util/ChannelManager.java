@@ -15,8 +15,7 @@
  */
 package com.mgmtp.perfload.perfalyzer.util;
 
-import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
-import static org.apache.commons.io.IOUtils.closeQuietly;
+import com.google.common.io.Files;
 
 import java.io.Closeable;
 import java.io.File;
@@ -26,15 +25,16 @@ import java.io.OutputStream;
 import java.nio.channels.WritableByteChannel;
 import java.util.Map;
 
-import com.google.common.io.Files;
+import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
+import static org.apache.commons.io.IOUtils.closeQuietly;
 
 /**
  * Utility class for managing channels. A channel manager is always based on a destination directory
  * and uses a {@link FileNamingStrategy} in order to create files it opens channels for.
- * 
+ *
  * @author rnaegele
  */
-public class ChannelManager implements Closeable {
+public class ChannelManager implements AutoCloseable, Closeable {
 
 	private final File destDir;
 	private final FileNamingStrategy fileNamingStrategy;
@@ -55,7 +55,7 @@ public class ChannelManager implements Closeable {
 	 * Returns a channel with the specified key. Channels are cached internally under the specified
 	 * key. If this method is called the first time for the specified key, a new channel is opened
 	 * and cached. Directories are created as necessary.
-	 * 
+	 *
 	 * @param channelKey
 	 *            the channel key
 	 * @return the channel

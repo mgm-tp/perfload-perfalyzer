@@ -15,11 +15,11 @@
  */
 package com.mgmtp.perfload.perfalyzer.reporting;
 
+import com.googlecode.jatl.HtmlWriter;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import com.googlecode.jatl.HtmlWriter;
 
 /**
  * @author rnaegele
@@ -36,44 +36,28 @@ public class Content extends HtmlWriter {
 	protected void build() {
 		//@formatter:off
 
-		if (contentItems.size() > 1) {
-			ul().classAttr("nav nav-tabs");
-				for (String key : contentItems.keySet()) {
-					li().a().href("#" + key).attr("data-toggle", "tab").text(key).end();
-				}
-			end();
-
-			div().classAttr("tab-content");
+		div().attr("role", "tabpanel");
+			div().classAttr("perf-tab-content");
 
 			boolean active = true;
 			for (Entry<String, List<ContentItem>> entry : contentItems.entrySet()) {
-				if (active) {
-					div().classAttr("tab-pane active").id(entry.getKey());
-					active = false;
-				} else {
-					div().classAttr("tab-pane").id(entry.getKey());
-				}
-						div().classAttr("accordion").id("accordion");
+				div();
+					if (active) {
+						classAttr("perf-tab-pane active");
+						active = false;
+					} else {
+						classAttr("perf-tab-pane");
+					}
+					String tab = entry.getKey();
+					attr("role", "tabpanel").id(tab);
 
-							for (ContentItem contentItem : entry.getValue()) {
-								write(contentItem);
-							}
-
-						end();
-					end();
+					entry.getValue().forEach(contentItem-> write(contentItem));
+				end();
 			}
 
 			end();
-		} else {
+		end();
 
-			div().classAttr("accordion").id("accordion");
-
-			for (ContentItem contentItem : contentItems.get("overall")) {
-				write(contentItem);
-			}
-
-			end();
-		}
 		//@formatter:on
 	}
 }

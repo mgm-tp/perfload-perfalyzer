@@ -24,8 +24,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import org.testng.annotations.Test;
 
-import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
-
 /**
  * @author rnaegele
  */

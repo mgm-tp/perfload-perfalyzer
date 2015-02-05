@@ -15,15 +15,13 @@
  */
 package com.mgmtp.perfload.perfalyzer.normalization;
 
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Maps.newHashMap;
-import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
-import static org.apache.commons.io.FilenameUtils.getPath;
-import static org.apache.commons.io.IOUtils.closeQuietly;
-import static org.apache.commons.lang.StringUtils.trimToNull;
-import static org.apache.commons.lang3.StringUtils.split;
-import static org.apache.commons.lang3.StringUtils.trimToEmpty;
+import com.google.common.base.Charsets;
+import com.mgmtp.perfload.perfalyzer.util.ChannelData;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.text.StrBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,17 +33,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
-import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.lang3.text.StrBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Charsets;
-import com.mgmtp.perfload.perfalyzer.util.ChannelData;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Maps.newHashMap;
+import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
+import static org.apache.commons.io.FilenameUtils.getPath;
+import static org.apache.commons.io.IOUtils.closeQuietly;
+import static org.apache.commons.lang.StringUtils.trimToNull;
+import static org.apache.commons.lang3.StringUtils.split;
 
 /**
  * Performs normalization tasks.
- * 
+ *
  * @author ctchinda
  */
 public class Normalizer {
@@ -57,11 +56,11 @@ public class Normalizer {
 
 	/**
 	 * @param sourceDir
-	 *            the source directory where normalized files are located
+	 * 		the source directory where normalized files are located
 	 * @param destDir
-	 *            the destination directory
+	 * 		the destination directory
 	 * @param normalizingStrategy
-	 *            the strategy that contains the normalizing logic
+	 * 		the strategy that contains the normalizing logic
 	 */
 	public Normalizer(final File sourceDir, final File destDir, final NormalizingStrategy normalizingStrategy) {
 		this.sourceDir = sourceDir;
@@ -90,20 +89,19 @@ public class Normalizer {
 		FileInputStream fis = null;
 		try {
 			fis = new FileInputStream(new File(sourceDir, filePath)); //relative to source dir
-			for (Scanner scanner = new Scanner(fis.getChannel(), Charsets.UTF_8.name()); scanner.hasNext();) {
+			for (Scanner scanner = new Scanner(fis.getChannel(), Charsets.UTF_8.name()); scanner.hasNext(); ) {
 				String line = scanner.nextLine();
-				if (trimToNull(line) == null) {
+				if (trimToNull(line) == null || line.startsWith("#")) {
 					continue;
 				}
-				List<ChannelData> channelDataList = normalizingStrategy.normalizeLine(file.getName(), line);
+				List<ChannelData> channelDataList = normalizingStrategy.normalizeLine(line);
 				for (ChannelData channelData : channelDataList) {
 
 					FileChannel channel = channels.get(channelData.getChannelKey());
 					if (channel == null) {
 						String baseName = channelData.getChannelBaseName();
 						String key = channelData.getChannelKey();
-						String marker = trimToEmpty(channelData.getMarker());
-						String fileName = new File(dirPath, String.format("[%s][%s]%s.csv", baseName, key, marker)).getPath();
+						String fileName = new File(dirPath, String.format("[%s][%s].csv", baseName, key)).getPath();
 						File destFile = new File(destDir, fileName);
 						destFile.getParentFile().mkdirs();
 						FileOutputStream fos = new FileOutputStream(destFile);
@@ -115,13 +113,8 @@ public class Normalizer {
 					writeLineToChannel(channel, channelData.getValue(), Charsets.UTF_8);
 				}
 			}
-		} catch (NormalizationException ex) {
-			log.error(ex.getMessage(), ex);
-			// TODO delete files
 		} finally {
-			for (OutputStream os : outputStreams) {
-				closeQuietly(os);
-			}
+			outputStreams.forEach(IOUtils::closeQuietly);
 			closeQuietly(fis);
 		}
 	}

@@ -15,12 +15,11 @@
  */
 package com.mgmtp.perfload.perfalyzer.util;
 
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Iterables.get;
-import static org.apache.commons.io.FileUtils.copyFile;
-import static org.apache.commons.io.FilenameUtils.normalize;
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
-import static org.apache.commons.lang3.StringUtils.substringAfter;
+import com.google.common.io.CharStreams;
+import com.google.common.io.Files;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.SystemUtils;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -29,6 +28,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -43,29 +43,32 @@ import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.SystemUtils;
-
-import com.google.common.io.CharStreams;
-import com.google.common.io.Files;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Iterables.get;
+import static org.apache.commons.io.FileUtils.copyFile;
+import static org.apache.commons.io.FilenameUtils.normalize;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.substringAfter;
 
 /**
  * Utility class for IO operations.
- * 
+ *
  * @author rnaegele, ctchinda
  */
 public class IoUtilities {
 
 	private static final int BUFFER_SIZE = 64 * 1024;
 
+	private IoUtilities() {
+	}
+
 	/**
 	 * Copies the content from one channel to another.
-	 * 
+	 *
 	 * @param srcChannel
-	 *            the source channel to copy from
+	 * 		the source channel to copy from
 	 * @param destChannel
-	 *            the destination channel to copy to
+	 * 		the destination channel to copy to
 	 */
 	public static void copy(final ReadableByteChannel srcChannel, final WritableByteChannel destChannel) throws IOException {
 		final ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
@@ -95,15 +98,15 @@ public class IoUtilities {
 	 * {@code headerLines} is greater than zero, the header from the first file is written to the
 	 * destination file. The same number of lines is skipped in all other file, i. e. all files are
 	 * expected to have the same header.
-	 * 
+	 *
 	 * @param sourceFiles
-	 *            the list of source files
+	 * 		the list of source files
 	 * @param destFile
-	 *            the destination file
+	 * 		the destination file
 	 * @param headerLines
-	 *            the number of header lines
+	 * 		the number of header lines
 	 * @param charset
-	 *            the character set to use
+	 * 		the character set to use
 	 */
 	public static void merge(final File sourceDir, final List<PerfAlyzerFile> sourceFiles, final File destFile,
 			final int headerLines, final Charset charset) throws IOException {
@@ -133,18 +136,18 @@ public class IoUtilities {
 
 	/**
 	 * Unzips a zip file.
-	 * 
+	 *
 	 * @param zip
-	 *            the zip file
+	 * 		the zip file
 	 * @param destDir
-	 *            the destination directory (will be created if non-existent)
+	 * 		the destination directory (will be created if non-existent)
 	 */
 	public static void unzip(final ZipFile zip, final File destDir) throws IOException {
 		if (!destDir.exists()) {
 			destDir.mkdir();
 		}
 
-		for (Enumeration<? extends ZipEntry> zipEntryEnum = zip.entries(); zipEntryEnum.hasMoreElements();) {
+		for (Enumeration<? extends ZipEntry> zipEntryEnum = zip.entries(); zipEntryEnum.hasMoreElements(); ) {
 			ZipEntry zipEntry = zipEntryEnum.nextElement();
 			extractEntry(zip, zipEntry, destDir);
 		}
@@ -166,41 +169,48 @@ public class IoUtilities {
 		}
 	}
 
-	public static void writeToChannel(final WritableByteChannel destChannel, final ByteBuffer buffer) throws IOException {
-		// write to the destination channel
-		destChannel.write(buffer);
-
-		// If partial transfer, shift remainder down so it does not get lost
-		// If buffer is empty, this is the same as calling clear()
-		buffer.compact();
-
-		// EOF will leave buffer in fill state
-		buffer.flip();
-
-		// make sure the buffer is fully drained
-		while (buffer.hasRemaining()) {
+	public static void writeToChannel(final WritableByteChannel destChannel, final ByteBuffer buffer) {
+		try {
+			// write to the destination channel
 			destChannel.write(buffer);
+
+			// If partial transfer, shift remainder down so it does not get lost
+			// If buffer is empty, this is the same as calling clear()
+			buffer.compact();
+
+			// EOF will leave buffer in fill state
+			buffer.flip();
+
+			// make sure the buffer is fully drained
+			while (buffer.hasRemaining()) {
+				destChannel.write(buffer);
+			}
+		} catch (IOException ex) {
+			throw new UncheckedIOException(ex);
 		}
 	}
 
-	public static void writeLineToChannel(final WritableByteChannel destChannel, final String line, final Charset charset)
-			throws IOException {
-		String tmpLine = line.endsWith(SystemUtils.LINE_SEPARATOR) ? line : line + SystemUtils.LINE_SEPARATOR;
-		CharBuffer buffer = CharBuffer.wrap(tmpLine);
-		CharsetEncoder encoder = charset.newEncoder();
-		ByteBuffer bb = encoder.encode(buffer);
-		writeToChannel(destChannel, bb);
+	public static void writeLineToChannel(final WritableByteChannel destChannel, final String line, final Charset charset) {
+		try {
+			String tmpLine = line.endsWith(SystemUtils.LINE_SEPARATOR) ? line : line + SystemUtils.LINE_SEPARATOR;
+			CharBuffer buffer = CharBuffer.wrap(tmpLine);
+			CharsetEncoder encoder = charset.newEncoder();
+			ByteBuffer bb = encoder.encode(buffer);
+			writeToChannel(destChannel, bb);
+		} catch (IOException ex) {
+			throw new UncheckedIOException(ex);
+		}
 	}
 
 	/**
 	 * Reads the last line of the specified file.
-	 * 
+	 *
 	 * @param file
-	 *            the file
+	 * 		the file
 	 * @param charset
-	 *            the charset
+	 * 		the charset
 	 */
-	public static String readLastLine(final File file, final Charset charset) throws IOException {
+	public static String readLastLine(final File file, final Charset charset) {
 		try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
 			long length = raf.length() - 1;
 
@@ -233,15 +243,17 @@ public class IoUtilities {
 
 			// turn into string respecting the charset
 			return new String(bytes, charset);
+		} catch (IOException ex) {
+			throw new UncheckedIOException(ex);
 		}
 	}
 
 	/**
 	 * Normalizes the specified file using {@link FilenameUtils#normalize(String)}. If {@code file}
 	 * is a directory, the normalized result always ends with the file separator.
-	 * 
+	 *
 	 * @param file
-	 *            the file to normalize
+	 * 		the file to normalize
 	 * @return the normalized file path
 	 */
 	public static String computeNormalizedPath(final File file) throws IOException {
@@ -254,9 +266,9 @@ public class IoUtilities {
 
 	/**
 	 * Returns the specified path appending a file separator is necessary.
-	 * 
+	 *
 	 * @param path
-	 *            the path
+	 * 		the path
 	 * @return the path ending with a file separator
 	 */
 	public static String ensureEndsWithFileSeparator(final String path) {
@@ -268,32 +280,35 @@ public class IoUtilities {
 
 	/**
 	 * Turns the specified file into one relative to the specified parent directory.
-	 * 
+	 *
 	 * @param parentDir
-	 *            the parent directory
+	 * 		the parent directory
 	 * @param file
-	 *            the file to make relative
+	 * 		the file to make relative
 	 * @return the file relative to {@code parentDir}
 	 * @throws IllegalStateException
-	 *             if {@code parentDir} is neither a directory nor a parent directory of
-	 *             {@code file}
+	 * 		if {@code parentDir} is neither a directory nor a parent directory of
+	 * 		{@code file}
 	 */
-	public static File makeRelative(final File parentDir, final File file) throws IOException {
-		checkState(parentDir.isDirectory(), "'%s' is not a directory", parentDir);
+	public static File makeRelative(final File parentDir, final File file) {
+		try {
+			checkState(parentDir.isDirectory(), "'%s' is not a directory", parentDir);
 
-		String normalizedBaseDirPath = computeNormalizedPath(parentDir);
-		String normalizedFilePath = computeNormalizedPath(file);
+			String normalizedBaseDirPath = computeNormalizedPath(parentDir);
+			String normalizedFilePath = computeNormalizedPath(file);
+			String relativeFilePath = substringAfter(normalizedFilePath, normalizedBaseDirPath);
+			checkState(isNotEmpty(relativeFilePath), "'%s' is not the parent directory of '%s'", parentDir, file);
 
-		String relativeFilePath = substringAfter(normalizedFilePath, normalizedBaseDirPath);
-		checkState(isNotEmpty(relativeFilePath), "'%s' is not the parent directory of '%s'", parentDir, file);
-
-		return new File(relativeFilePath);
+			return new File(relativeFilePath);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
 	 * Creates a temporary directory named with a random UUID in the directory specified by the
 	 * system property {@coe java.io.tmpdir}.
-	 * 
+	 *
 	 * @return the directory
 	 */
 	public static File createTempDir() {

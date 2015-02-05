@@ -28,7 +28,7 @@ import org.jfree.data.xy.XYDataset;
 
 /**
  * {@link XYDataset} implementation for lists of lists of Double objects.
- * 
+ *
  * @author rnaegele
  */
 public class NumberDataSet extends AbstractSeriesDataset implements IntervalXYDataset {
@@ -38,11 +38,9 @@ public class NumberDataSet extends AbstractSeriesDataset implements IntervalXYDa
 
 	/**
 	 * Adds a series to the dataset.
-	 * 
-	 * @param name
-	 *            the series name
-	 * @param series
-	 *            the seris data
+	 *
+	 * @param name   the series name
+	 * @param series the seris data
 	 */
 	public void addSeries(final String name, final List<SeriesPoint> series) {
 		seriesList.add(new NameSeriesWrapper(name, series));
@@ -116,7 +114,7 @@ public class NumberDataSet extends AbstractSeriesDataset implements IntervalXYDa
 
 	@SuppressWarnings("rawtypes")
 	@Override
-	public Comparable getSeriesKey(final int series) {
+	public Comparable<String> getSeriesKey(final int series) {
 		return seriesList.get(series).name;
 	}
 
@@ -184,7 +182,7 @@ public class NumberDataSet extends AbstractSeriesDataset implements IntervalXYDa
 
 	/**
 	 * Wraps series and series name for sorting.
-	 * 
+	 *
 	 * @author rnaegele
 	 */
 	static class NameSeriesWrapper implements Comparable<NameSeriesWrapper> {

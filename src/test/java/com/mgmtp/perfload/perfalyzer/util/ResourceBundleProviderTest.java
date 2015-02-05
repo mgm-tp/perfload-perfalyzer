@@ -25,7 +25,6 @@ import javax.inject.Provider;
 
 import org.testng.annotations.Test;
 
-import com.mgmtp.perfload.perfalyzer.util.ResourceBundleProvider;
 import com.mgmtp.perfload.perfalyzer.util.ResourceBundleProvider.Utf8Control;
 
 /**

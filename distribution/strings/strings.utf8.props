@@ -18,9 +18,11 @@
 axis.label.timeSeconds = Time (s)
 axis.label.timeMillis = Time (ms)
 axis.label.meanPercent = Mean (%)
+axis.label.meanKiB = Mean (KiB)
+axis.label.meanB = Mean (B)
 axis.label.medianMillis = Median (ms)
-axis.label.medianKiB = Median (MiB)
-axis.label.medianB = Median (KiB)
+axis.label.medianKiB = Median (KiB)
+axis.label.medianB = Median (B)
 axis.label.numCalls = Number of Requests
 axis.label.requestsPerMinute = Requests (1/min)
 axis.label.requestsPerSecond = Requests (1/s)
@@ -29,7 +31,10 @@ axis.label.MiB = MiB
 axis.label.executionsPerMinute = Executions per Minute
 axis.label.executionsPer10Minutes = Executions per 10 Minutes
 axis.label.medianExecutionTimeSeconds = Median Execution Time (s)
+axis.label.executions = Executions (1/min)
 
+overview.header=Test Overview
+overview.loadprofile=Load Profile
 overview.testplan = Testplan
 overview.start = Start
 overview.end = End

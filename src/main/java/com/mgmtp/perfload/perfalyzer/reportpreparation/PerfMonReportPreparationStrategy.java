@@ -15,32 +15,6 @@
  */
 package com.mgmtp.perfload.perfalyzer.reportpreparation;
 
-import static com.google.common.collect.Iterables.getLast;
-import static com.google.common.collect.Lists.newLinkedList;
-import static com.google.common.collect.Maps.newHashMap;
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
-import static com.mgmtp.perfload.perfalyzer.util.PerfAlyzerUtils.readDataFile;
-import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
-import static org.apache.commons.io.FileUtils.readLines;
-import static org.apache.commons.io.FileUtils.writeLines;
-import static org.apache.commons.io.FilenameUtils.getPath;
-import static org.apache.commons.io.FilenameUtils.removeExtension;
-import static org.apache.commons.lang3.StringUtils.split;
-
-import java.io.File;
-import java.io.IOException;
-import java.text.NumberFormat;
-import java.text.ParseException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.ResourceBundle;
-
-import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.lang3.text.StrBuilder;
-import org.apache.commons.lang3.text.StrTokenizer;
-
 import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.LinkedListMultimap;
@@ -51,6 +25,29 @@ import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator.ChartDimensio
 import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator.RendererType;
 import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
 import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.text.StrBuilder;
+import org.apache.commons.lang3.text.StrTokenizer;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.NumberFormat;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.ResourceBundle;
+
+import static com.google.common.collect.Iterables.getLast;
+import static com.google.common.collect.Lists.newLinkedList;
+import static com.google.common.collect.Maps.newHashMap;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
+import static com.mgmtp.perfload.perfalyzer.util.PerfAlyzerUtils.readDataFile;
+import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
+import static org.apache.commons.io.FileUtils.readLines;
+import static org.apache.commons.io.FileUtils.writeLines;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
+import static org.apache.commons.lang3.StringUtils.split;
 
 /**
  * @author ctchinda
@@ -59,13 +56,12 @@ public class PerfMonReportPreparationStrategy extends AbstractReportPreparationS
 
 	public PerfMonReportPreparationStrategy(final NumberFormat intNumberFormat,
 			final NumberFormat floatNumberFormat, final List<DisplayData> displayDataList,
-			final ResourceBundle resourceBundle, final PlotCreator plotCreator, final TestMetadata testMetadata) {
-		super(intNumberFormat, floatNumberFormat, displayDataList, resourceBundle, plotCreator, testMetadata);
+			final ResourceBundle resourceBundle, final PlotCreator plotCreator, final TestMetadata testMetadata, final DataRange dataRange) {
+		super(intNumberFormat, floatNumberFormat, displayDataList, resourceBundle, plotCreator, testMetadata, dataRange);
 	}
 
 	@Override
-	public void processFiles(final File sourceDir, final File destDir, final List<PerfAlyzerFile> files) throws IOException,
-			ParseException {
+	public void processFiles(final File sourceDir, final File destDir, final List<PerfAlyzerFile> files) throws IOException {
 
 		ListMultimap<String, PerfAlyzerFile> byTypeAndHostMultimapAggregated = ArrayListMultimap.create();
 		ListMultimap<String, PerfAlyzerFile> byTypeAndHostMultimap = ArrayListMultimap.create();
@@ -73,15 +69,16 @@ public class PerfMonReportPreparationStrategy extends AbstractReportPreparationS
 		for (PerfAlyzerFile f : files) {
 			log.info("Processing file '{}'...", f);
 
-			File file = f.getFile();
-			String name = file.getName();
-
 			// strip all numbers in order to group by type, e. g.
 			// java_0_ --> java
 			// java_1_ --> java
 			// io_0_w --> io_w
 			// io_0_r --> io_r
-			String key = getPath(file.getPath()) + name.replaceAll("_\\d+", "");
+			String tmp = f.getFileNameParts().get(1).replaceAll("_\\d+", "");
+			PerfAlyzerFile destFile = f.copy();
+			destFile.getFileNameParts().set(1, tmp);
+
+			String key = destFile.getFile().getPath();
 
 			if ("aggregated".equals(getLast(f.getFileNameParts()))) {
 				// CSV for HTML tables
@@ -99,8 +96,7 @@ public class PerfMonReportPreparationStrategy extends AbstractReportPreparationS
 		createPlots(sourceDir, destDir, byTypeAndHostMultimap);
 	}
 
-	private void createCsvFiles(final File sourceDir, final File destDir,
-			final ListMultimap<String, PerfAlyzerFile> byTypeAndHostMultimap)
+	private void createCsvFiles(final File sourceDir, final File destDir, final ListMultimap<String, PerfAlyzerFile> byTypeAndHostMultimap)
 			throws IOException {
 
 		ListMultimap<String, String> globalContentListMultimap = LinkedListMultimap.create();
@@ -199,14 +195,14 @@ public class PerfMonReportPreparationStrategy extends AbstractReportPreparationS
 			}
 
 			plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES, ChartDimensions.DEFAULT,
-					dataSet);
+					dataRange, false, dataSet);
 		}
 
 		for (Entry<String, NumberDataSet> entry : globalDataSets.entrySet()) {
 			NumberDataSet dataSet = entry.getValue();
 			File destFile = new File(destDir, "global" + SystemUtils.FILE_SEPARATOR + entry.getKey());
 			plotCreator.writePlotFile(destFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES, ChartDimensions.DEFAULT,
-					dataSet);
+					dataRange, false, dataSet);
 		}
 	}
 }

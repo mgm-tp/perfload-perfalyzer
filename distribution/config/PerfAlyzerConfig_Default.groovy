@@ -13,7 +13,7 @@ email {
 	to = []
 	smtp {
 		// host =
-		// port = 
+		// port =
 		// ssl = true
 		// auth = true
 		// username = ''
@@ -21,10 +21,10 @@ email {
 	}
 	/*
 	subjects {
-		
+
 	}
 	*/
-	
+
 	// maxHistoryItems = 20
 }
 
@@ -39,7 +39,7 @@ formats {
 	perfmonMemIO {
 		pattern = ~/\[perfmon\]\[io_(?:r|w)\].*/
 		unitX = 'axis.label.timeSeconds'
-		unitY = ['axis.label.medianB']
+		unitY = ['axis.label.meanKiB']
 	}
 	perfmonCPU {
 		pattern = ~/\[perfmon\]\[(?:cpu_X|java)\].*/
@@ -86,6 +86,11 @@ formats {
 		unitX = 'axis.label.timeSeconds'
 		unitY = ['axis.label.MiB', 'axis.label.timeMillis']
 	}
+	loadProfile {
+		pattern = ~/\[loadprofile\].*/
+		unitX = 'axis.label.timeSeconds'
+		unitY = ['axis.label.executionsPerMinute']
+	}
 }
 
 reportContents {
@@ -108,6 +113,7 @@ reportContents {
 	// Files matching any of these expressions will be excluded from the report.
 	exclusions = [
 		~/global[\\\\/]\[perfmon\]\[java\].*/,
-		~/.*(?<!global)[\\\\/]\[perfmon\]\[(?:mem|swap|cpu_X|io_(?:r|w))\].*/
-	]	
+		~/.*(?<!global)[\\\\/]\[perfmon\]\[(?:mem|swap|cpu_X|io_(?:r|w))\].*/,
+		~/console[\\\\/]\[loadprofile\].*/
+	]
 }

@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mgmtp.perfload.perfalyzer.util.ChannelData;
-import com.mgmtp.perfload.perfalyzer.util.Marker;
 import com.mgmtp.perfload.perfalyzer.util.PerfMonTypeConfig;
 import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
 
@@ -49,22 +48,20 @@ public class PerfMonNormalizingStrategy implements NormalizingStrategy {
 
 	private final StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
 	private final TimestampNormalizer timestampNormalizer;
-	private final List<Marker> markers;
 	private Map<String, Double> firstValues;
 
-	public PerfMonNormalizingStrategy(final TimestampNormalizer timestampNormalizer, final List<Marker> markers) {
+	public PerfMonNormalizingStrategy(final TimestampNormalizer timestampNormalizer) {
 		this.timestampNormalizer = timestampNormalizer;
-		this.markers = markers;
 		tokenizer.setDelimiterChar('\t');
 	}
 
 	@Override
-	public List<ChannelData> normalizeLine(final String fileName, final String line) {
+	public List<ChannelData> normalizeLine(final String line) {
 		tokenizer.reset(line);
 		List<String> tokenList = tokenizer.getTokenList();
 
 		List<ChannelData> result = newArrayListWithExpectedSize(3);
-		ZonedDateTime timestamp = null;
+		ZonedDateTime timestamp;
 		try {
 			timestamp = ZonedDateTime.parse(tokenList.get(0));
 		} catch (IllegalArgumentException ex) {
@@ -116,12 +113,6 @@ public class PerfMonNormalizingStrategy implements NormalizingStrategy {
 
 						String resultLine = sb.toString();
 						result.add(new ChannelData(CHANNEL_BASE_NAME, channelKey, resultLine));
-
-						for (Marker marker : markers) {
-							if (marker.isInMarker(normalizedTimestamp)) {
-								result.add(new ChannelData(CHANNEL_BASE_NAME, channelKey, marker.getName(), resultLine));
-							}
-						}
 					} catch (NumberFormatException ex) {
 						// in case a line in the perfmon file is incomplete
 						log.warn("Could not parse line: " + line, ex);

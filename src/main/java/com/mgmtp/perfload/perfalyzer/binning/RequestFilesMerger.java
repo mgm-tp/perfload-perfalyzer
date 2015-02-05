@@ -16,13 +16,11 @@
 package com.mgmtp.perfload.perfalyzer.binning;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Predicates.or;
-import static com.google.common.collect.FluentIterable.from;
 import static com.google.common.collect.Iterables.get;
-import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
-import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.perfAlyzerFileNameMatchesWildcard;
+import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.perfAlyzerFilePartsMatchWildcards;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.apache.commons.io.FileUtils.writeLines;
 
@@ -30,18 +28,16 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import org.apache.commons.lang3.text.StrTokenizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.ListMultimap;
 import com.google.common.io.Files;
-import com.mgmtp.perfload.perfalyzer.util.DirectoryLister;
 import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
 
 /**
@@ -57,15 +53,13 @@ public class RequestFilesMerger {
 		this.binnedDir = binnedDir;
 	}
 
-	public void mergeFiles() throws IOException {
-		List<PerfAlyzerFile> listPerfAlyzerFiles = DirectoryLister.listPerfAlyzerFiles(binnedDir);
+	public void mergeFiles(final List<PerfAlyzerFile> inputFiles) throws IOException {
+		Predicate<PerfAlyzerFile> predicate1 = perfAlyzerFilePartsMatchWildcards("measuring", "*", "requestsPerInterval");
+		Predicate<PerfAlyzerFile> predicate2 = perfAlyzerFilePartsMatchWildcards("measuring", "*", "aggregatedResponseTimes");
 
-		Predicate<PerfAlyzerFile> predicate1 = perfAlyzerFileNameMatchesWildcard("[measuring][*][requestsPerInterval].csv");
-		Predicate<PerfAlyzerFile> predicate2 = perfAlyzerFileNameMatchesWildcard("[measuring][*][aggregatedResponseTimes].csv");
+		Predicate<PerfAlyzerFile> predicateOr = predicate1.or(predicate2);
 
-		Predicate<PerfAlyzerFile> predicateOr = or(predicate1, predicate2);
-
-		Set<PerfAlyzerFile> paFiles = from(listPerfAlyzerFiles).filter(predicateOr).toSet();
+		Set<PerfAlyzerFile> paFiles = inputFiles.stream().filter(predicateOr).collect(toSet());
 		ListMultimap<String, PerfAlyzerFile> byOperationMultimap = ArrayListMultimap.create();
 
 		for (PerfAlyzerFile paf : paFiles) {
@@ -80,20 +74,18 @@ public class RequestFilesMerger {
 
 			checkState(list.size() == 2, "Two files are required by operation but found %d for '%s'", list.size(), operation);
 
-			// TODO markers
 			List<String> resultLines = newArrayListWithCapacity(2);
 
-			PerfAlyzerFile paf1 = getOnlyElement(Collections2.filter(list, predicate1));
+			PerfAlyzerFile paf1 = list.stream().filter(predicate1).findFirst().get();
 			File file1 = new File(binnedDir, paf1.getFile().getPath());
 			List<String> lines1 = Files.readLines(file1, Charsets.UTF_8);
 
-			PerfAlyzerFile paf2 = getOnlyElement(Collections2.filter(list, predicate2));
+			PerfAlyzerFile paf2 = list.stream().filter(predicate2).findFirst().get();
 			File file2 = new File(binnedDir, paf2.getFile().getPath());
 			List<String> lines2 = Files.readLines(file2, Charsets.UTF_8);
 
 			if (lines1.size() == lines2.size()) {
-				File resultFile = new File(binnedDir, paf1.copy().removeFileNamePart(2).addFileNamePart("aggregated").getFile()
-						.getPath());
+				File resultFile = new File(binnedDir, paf1.copy().removeFileNamePart(2).addFileNamePart("aggregated").getFile().getPath());
 
 				for (int i = 0; i < lines1.size(); ++i) {
 					String line1 = get(lines1, i);
@@ -108,7 +100,6 @@ public class RequestFilesMerger {
 			} else {
 				log.warn("Files to merge must have the same number of lines. Merging not possible: {}", list);
 			}
-
 		}
 	}
 }

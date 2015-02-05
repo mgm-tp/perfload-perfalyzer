@@ -15,25 +15,6 @@
  */
 package com.mgmtp.perfload.perfalyzer.workflow;
 
-import static com.google.common.collect.FluentIterable.from;
-import static com.google.common.collect.Lists.newArrayList;
-import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.createTempDir;
-import static com.mgmtp.perfload.perfalyzer.util.PerfFunctions.makeAbsolute;
-import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.fileNameContains;
-import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.perfAlyzerFileNameContains;
-import static org.apache.commons.io.FileUtils.deleteQuietly;
-
-import java.io.File;
-import java.text.NumberFormat;
-import java.util.List;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-
 import com.google.common.collect.ImmutableList;
 import com.mgmtp.perfload.perfalyzer.PerfAlyzerException;
 import com.mgmtp.perfload.perfalyzer.annotations.FloatFormat;
@@ -46,7 +27,6 @@ import com.mgmtp.perfload.perfalyzer.binning.MeasuringRequestsBinningStrategy;
 import com.mgmtp.perfload.perfalyzer.binning.MeasuringResponseTimesBinningStrategy;
 import com.mgmtp.perfload.perfalyzer.binning.RequestFilesMerger;
 import com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants;
-import com.mgmtp.perfload.perfalyzer.normalization.DateTimeBasedCsvFileSortMerger;
 import com.mgmtp.perfload.perfalyzer.normalization.MeasuringNormalizingStrategy;
 import com.mgmtp.perfload.perfalyzer.normalization.Normalizer;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.DisplayData;
@@ -54,10 +34,34 @@ import com.mgmtp.perfload.perfalyzer.reportpreparation.MeasuringReportPreparatio
 import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.ReportPreparationStrategy;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.ReporterPreparator;
+import com.mgmtp.perfload.perfalyzer.util.CsvFileSortMerger;
+import com.mgmtp.perfload.perfalyzer.util.CsvTimestampColumnComparator;
+import com.mgmtp.perfload.perfalyzer.util.DirectoryLister;
 import com.mgmtp.perfload.perfalyzer.util.Marker;
 import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
 import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
 import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
+import org.slf4j.MDC;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.io.File;
+import java.text.NumberFormat;
+import java.util.List;
+import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
+
+import static com.google.common.collect.Lists.newArrayList;
+import static com.mgmtp.perfload.perfalyzer.util.DirectoryLister.listPerfAlyzerFiles;
+import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.createTempDir;
+import static com.mgmtp.perfload.perfalyzer.util.PerfFunctions.makeAbsolute;
+import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.fileNameContains;
+import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.perfAlyzerFileNameContains;
+import static java.util.stream.Collectors.toList;
+import static org.apache.commons.io.FileUtils.deleteQuietly;
 
 /**
  * @author ctchinda
@@ -68,41 +72,36 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 	private final int maxHistoryItems;
 
 	@Inject
-	public MeasuringWorkflow(final TimestampNormalizer timestampNormalizer, final List<Marker> markers,
-			final @IntFormat Provider<NumberFormat> intNumberFormatProvider,
-			final @FloatFormat Provider<NumberFormat> floatNumberFormatProvider,
-			final List<DisplayData> displayDataList, final ResourceBundle resourceBundle, final PlotCreator plotCreator,
-			final TestMetadata testMetadata, @MaxHistoryItems final int maxHistoryItems) {
-		super(timestampNormalizer, markers, intNumberFormatProvider, floatNumberFormatProvider, displayDataList,
-				resourceBundle, testMetadata, plotCreator);
+	public MeasuringWorkflow(final TimestampNormalizer timestampNormalizer, @IntFormat final Provider<NumberFormat> intNumberFormatProvider,
+			@FloatFormat final Provider<NumberFormat> floatNumberFormatProvider, final List<DisplayData> displayDataList,
+			final ResourceBundle resourceBundle, final PlotCreator plotCreator, final TestMetadata testMetadata,
+			@MaxHistoryItems final int maxHistoryItems) {
+		super(timestampNormalizer, intNumberFormatProvider, floatNumberFormatProvider, displayDataList, resourceBundle, testMetadata, plotCreator);
 		this.maxHistoryItems = maxHistoryItems;
 	}
 
 	@Override
-	public List<Runnable> getNormalizationTasks(final File inputDir, final List<File> inputFiles, final File outputDir) {
-		Runnable task = new Runnable() {
-			@Override
-			public void run() {
-				Set<File> fileSet = from(inputFiles).filter(fileNameContains("measuring")).transform(makeAbsolute(inputDir))
-						.toSet();
-				final File sortMergeOutputDir = createTempDir();
-				File mergedMeasuringLog = new File("global/measuring-logs/measuring.csv");
-				try {
-					log.info("Merging measuring logs to '{}'", mergedMeasuringLog);
-					DateTimeBasedCsvFileSortMerger smf = new DateTimeBasedCsvFileSortMerger(fileSet,
-							new File(sortMergeOutputDir, mergedMeasuringLog.getPath()), 3, ';');
-					smf.mergeFiles();
+	public List<Runnable> getNormalizationTasks(final File inputDir, final File outputDir) {
+		Runnable task = () -> {
+			List<File> inputFiles = DirectoryLister.listFiles(inputDir);
+			Set<File> fileSet = inputFiles.stream().filter(fileNameContains("measuring")).map(makeAbsolute(inputDir)).collect(Collectors.toSet());
+			final File sortMergeOutputDir = createTempDir();
+			File mergedMeasuringLog = new File("global/measuring-logs/measuring.csv");
+			try {
+				log.info("Merging measuring logs to '{}'", mergedMeasuringLog);
+				CsvFileSortMerger merger = new CsvFileSortMerger(fileSet, new File(sortMergeOutputDir, mergedMeasuringLog.getPath()),
+						new CsvTimestampColumnComparator(';', 3));
+				merger.mergeFiles();
 
-					MeasuringNormalizingStrategy strat = new MeasuringNormalizingStrategy(timestampNormalizer, markers);
-					Normalizer normalizer = new Normalizer(sortMergeOutputDir, outputDir, strat);
+				MeasuringNormalizingStrategy strat = new MeasuringNormalizingStrategy(timestampNormalizer);
+				Normalizer normalizer = new Normalizer(sortMergeOutputDir, outputDir, strat);
 
-					log.info("Normalizing '{}'", mergedMeasuringLog);
-					normalizer.normalize(mergedMeasuringLog);
-				} catch (Exception ex) {
-					throw new PerfAlyzerException("Error normalizing file: " + mergedMeasuringLog, ex);
-				} finally {
-					deleteQuietly(sortMergeOutputDir);
-				}
+				log.info("Normalizing '{}'", mergedMeasuringLog);
+				normalizer.normalize(mergedMeasuringLog);
+			} catch (Exception ex) {
+				throw new PerfAlyzerException("Error normalizing file: " + mergedMeasuringLog, ex);
+			} finally {
+				deleteQuietly(sortMergeOutputDir);
 			}
 		};
 
@@ -110,120 +109,119 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 	}
 
 	@Override
-	public List<Runnable> getBinningTasks(final File inputDir, final List<PerfAlyzerFile> inputFiles, final File outputDir) {
+	public List<Runnable> getBinningTasks(final File inputDir, final File outputDir, final Marker marker) {
 		List<Runnable> tasks = newArrayList();
 
 		final LatchProvider latchProvider = new LatchProvider();
+		final long startOfFirstBin = marker != null ? marker.getLeftMillis() : 0;
 
-		for (final PerfAlyzerFile file : from(inputFiles).filter(perfAlyzerFileNameContains("measuring"))) {
-			Runnable task = new Runnable() {
-				@Override
-				public void run() {
-					try {
-						log.info("Binning response times: '{}'", file);
+		List<PerfAlyzerFile> inputFiles = listPerfAlyzerFiles(inputDir, marker);
+		inputFiles.stream().filter(perfAlyzerFileNameContains("measuring")).forEach(file -> {
+			Runnable task = () -> {
+				MDC.put("file", file.getFile().getPath());
+				try {
+					log.info("Binning response times: '{}'", file);
 
-						MeasuringResponseTimesBinningStrategy strategy = new MeasuringResponseTimesBinningStrategy(
-								intNumberFormatProvider.get(), floatNumberFormatProvider.get());
-						final Binner binner = new Binner(inputDir, outputDir, strategy);
-						binner.binFile(file);
+					MeasuringResponseTimesBinningStrategy strategy = new MeasuringResponseTimesBinningStrategy(startOfFirstBin,
+							intNumberFormatProvider.get(), floatNumberFormatProvider.get());
+					final Binner binner = new Binner(inputDir, outputDir, strategy);
+					binner.binFile(file);
 
-						latchProvider.get().countDown();
-					} catch (Exception ex) {
-						throw new PerfAlyzerException("Error binning response times: " + file, ex);
-					}
+					latchProvider.get().countDown();
+				} catch (Exception ex) {
+					throw new PerfAlyzerException("Error binning response times: " + file, ex);
+				} finally {
+					MDC.remove("file");
 				}
 			};
 			tasks.add(task);
-			task = new Runnable() {
-				@Override
-				public void run() {
-					try {
-						log.info("Binning requests: '{}'", file);
+			task = () -> {
+				MDC.put("file", file.getFile().getPath());
+				try {
+					log.info("Binning requests: '{}'", file);
 
-						MeasuringRequestsBinningStrategy strategy = new MeasuringRequestsBinningStrategy(
-								PerfAlyzerConstants.BIN_SIZE_MILLIS_1_MINUTE, intNumberFormatProvider.get(),
-								floatNumberFormatProvider.get());
-						final Binner binner = new Binner(inputDir, outputDir, strategy);
-						binner.binFile(file);
+					MeasuringRequestsBinningStrategy strategy = new MeasuringRequestsBinningStrategy(startOfFirstBin,
+							PerfAlyzerConstants.BIN_SIZE_MILLIS_1_MINUTE, intNumberFormatProvider.get(),
+							floatNumberFormatProvider.get());
+					final Binner binner = new Binner(inputDir, outputDir, strategy);
+					binner.binFile(file);
 
-						latchProvider.get().countDown();
-					} catch (Exception ex) {
-						throw new PerfAlyzerException("Error binning requests: " + file, ex);
-					}
+					latchProvider.get().countDown();
+				} catch (Exception ex) {
+					throw new PerfAlyzerException("Error binning requests: " + file, ex);
+				} finally {
+					MDC.remove("file");
 				}
 			};
 			tasks.add(task);
-			task = new Runnable() {
-				@Override
-				public void run() {
-					try {
-						log.info("Binning requests: '{}'", file);
+			task = () -> {
+				MDC.put("file", file.getFile().getPath());
+				try {
+					log.info("Binning requests: '{}'", file);
 
-						MeasuringRequestsBinningStrategy strategy = new MeasuringRequestsBinningStrategy(
-								PerfAlyzerConstants.BIN_SIZE_MILLIS_1_SECOND, intNumberFormatProvider.get(),
-								floatNumberFormatProvider.get());
-						final Binner binner = new Binner(inputDir, outputDir, strategy);
-						binner.binFile(file);
+					MeasuringRequestsBinningStrategy strategy = new MeasuringRequestsBinningStrategy(startOfFirstBin,
+							PerfAlyzerConstants.BIN_SIZE_MILLIS_1_SECOND, intNumberFormatProvider.get(),
+							floatNumberFormatProvider.get());
+					final Binner binner = new Binner(inputDir, outputDir, strategy);
+					binner.binFile(file);
 
-						latchProvider.get().countDown();
-					} catch (Exception ex) {
-						throw new PerfAlyzerException("Error binning requests: " + file, ex);
-					}
+					latchProvider.get().countDown();
+				} catch (Exception ex) {
+					throw new PerfAlyzerException("Error binning requests: " + file, ex);
+				} finally {
+					MDC.remove("file");
 				}
 			};
 			tasks.add(task);
-			task = new Runnable() {
-				@Override
-				public void run() {
-					try {
-						log.info("Binning requests: '{}'", file);
-						MeasuringAggregatedRequestsBinningStrategy strategy = new MeasuringAggregatedRequestsBinningStrategy(
-								intNumberFormatProvider.get(), floatNumberFormatProvider.get());
-						final Binner binner = new Binner(inputDir, outputDir, strategy);
-						binner.binFile(file);
+			task = () -> {
+				MDC.put("file", file.getFile().getPath());
+				try {
+					log.info("Binning requests: '{}'", file);
+					MeasuringAggregatedRequestsBinningStrategy strategy = new MeasuringAggregatedRequestsBinningStrategy(
+							startOfFirstBin, intNumberFormatProvider.get(), floatNumberFormatProvider.get());
+					final Binner binner = new Binner(inputDir, outputDir, strategy);
+					binner.binFile(file);
 
-						latchProvider.get().countDown();
-					} catch (Exception ex) {
-						throw new PerfAlyzerException("Error binning requests: " + file, ex);
-					}
+					latchProvider.get().countDown();
+				} catch (Exception ex) {
+					throw new PerfAlyzerException("Error binning requests: " + file, ex);
+				} finally {
+					MDC.remove("file");
 				}
 			};
 			tasks.add(task);
-			task = new Runnable() {
-				@Override
-				public void run() {
-					try {
-						log.info("Binning errors: '{}'", file);
-						ErrorCountBinningStragegy strategy = new ErrorCountBinningStragegy(
-								intNumberFormatProvider.get(), floatNumberFormatProvider.get());
-						final Binner binner = new Binner(inputDir, outputDir, strategy);
-						binner.binFile(file);
+			task = () -> {
+				MDC.put("file", file.getFile().getPath());
+				try {
+					log.info("Binning errors: '{}'", file);
+					ErrorCountBinningStragegy strategy = new ErrorCountBinningStragegy(startOfFirstBin,
+							intNumberFormatProvider.get(), floatNumberFormatProvider.get());
+					final Binner binner = new Binner(inputDir, outputDir, strategy);
+					binner.binFile(file);
 
-						latchProvider.get().countDown();
-					} catch (Exception ex) {
-						throw new PerfAlyzerException("Error binning requests: " + file, ex);
-					}
+					latchProvider.get().countDown();
+				} catch (Exception ex) {
+					throw new PerfAlyzerException("Error binning requests: " + file, ex);
+				} finally {
+					MDC.remove("file");
 				}
 			};
 			tasks.add(task);
-		}
+		});
 
 		// this makes sure that the next tasks has to wai until the already added ones have finished
 		latchProvider.latch = new CountDownLatch(tasks.size());
 
-		Runnable task = new Runnable() {
-			@Override
-			public void run() {
-				try {
-					latchProvider.get().await();
-					RequestFilesMerger merger = new RequestFilesMerger(outputDir);
-					merger.mergeFiles();
-				} catch (InterruptedException ex) {
-					Thread.currentThread().interrupt();
-					log.error(ex.getMessage(), ex);
-				} catch (Exception ex) {
-					throw new PerfAlyzerException("Error merging files", ex);
-				}
+		Runnable task = () -> {
+			try {
+				latchProvider.get().await();
+				RequestFilesMerger merger = new RequestFilesMerger(outputDir);
+				merger.mergeFiles(listPerfAlyzerFiles(outputDir, marker));
+			} catch (InterruptedException ex) {
+				Thread.currentThread().interrupt();
+				log.error(ex.getMessage(), ex);
+			} catch (Exception ex) {
+				throw new PerfAlyzerException("Error merging files", ex);
 			}
 		};
 		tasks.add(task);
@@ -232,22 +230,20 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 	}
 
 	@Override
-	public List<Runnable> getReportPreparationTasks(final File inputDir, final List<PerfAlyzerFile> inputFiles,
-			final File outputDir) {
-		Runnable task = new Runnable() {
-			@Override
-			public void run() {
-				try {
-					log.info("Preparing report data...");
+	public List<Runnable> getReportPreparationTasks(final File inputDir, final File outputDir, final Marker marker) {
+		Runnable task = () -> {
+			try {
+				log.info("Preparing report data...");
 
-					ReportPreparationStrategy strategy = new MeasuringReportPreparationStrategy(intNumberFormatProvider.get(),
-							floatNumberFormatProvider.get(), displayDataList, resourceBundle, plotCreator, testMetadata,
-							maxHistoryItems);
-					final ReporterPreparator reporter = new ReporterPreparator(inputDir, outputDir, strategy);
-					reporter.processFiles(from(inputFiles).filter(perfAlyzerFileNameContains("measuring")).toList());
-				} catch (Exception ex) {
-					throw new PerfAlyzerException("Error creating measuring report files", ex);
-				}
+				ReportPreparationStrategy strategy = new MeasuringReportPreparationStrategy(intNumberFormatProvider.get(),
+						floatNumberFormatProvider.get(), displayDataList, resourceBundle, plotCreator, testMetadata,
+						rangeFromMarker(marker), maxHistoryItems);
+				final ReporterPreparator reporter = new ReporterPreparator(inputDir, outputDir, strategy);
+
+				List<PerfAlyzerFile> inputFiles = listPerfAlyzerFiles(inputDir, marker);
+				reporter.processFiles(inputFiles.stream().filter(perfAlyzerFileNameContains("measuring")).collect(toList()));
+			} catch (Exception ex) {
+				throw new PerfAlyzerException("Error creating measuring report files", ex);
 			}
 		};
 

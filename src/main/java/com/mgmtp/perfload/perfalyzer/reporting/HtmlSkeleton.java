@@ -28,16 +28,13 @@ public class HtmlSkeleton extends HtmlWriter {
 	private final OverviewItem overviewItem;
 	private final Content content;
 	private final String createdString;
-	private final String topLinkName;
 
-	public HtmlSkeleton(final String title, final String createdString, final NavBar navBar, final OverviewItem overviewItem,
-			final Content content, final String topLinkName) {
+	public HtmlSkeleton(final String title, final String createdString, final NavBar navBar, final OverviewItem overviewItem, final Content content) {
 		this.title = title;
 		this.createdString = createdString;
 		this.navBar = navBar;
 		this.overviewItem = overviewItem;
 		this.content = content;
-		this.topLinkName = topLinkName;
 	}
 
 	@Override
@@ -51,34 +48,23 @@ public class HtmlSkeleton extends HtmlWriter {
 				title().text("perfAlyzer Report - " + title).end();
 				meta().charset("UTF-8");
 				meta().name("viewport").content("width=device-width, initial-scale=1.0");
-				link().href("assets/img/icon.png").rel("icon").type("image/png");
-				link().href("assets/css/bootstrap.css").rel("stylesheet");
-				script().src("assets/js/jquery-1.7.2.min.js").end();
-				script().src("assets/js/bootstrap.js").end();
+				link().href("assets/images/icon.png").rel("icon").type("image/png");
+				link().href("assets/stylesheets/perfalyzer.css").rel("stylesheet");
+				script().src("assets/javascripts/jquery.js").end();
+				script().src("assets/javascripts/bootstrap.js").end();
 			end();
 			body();
-
-				write(navBar);
-
-				div().classAttr("container");
-					div().classAttr("row-fluid");
-						write(overviewItem);
-					end();
-					div().classAttr("row-fluid");
-						write(content);
-					end();
-
+				div().classAttr("perf-container");
+					write(navBar);
+					write(overviewItem);
+					write(content);
 					hr();
-
-					start("footer").classAttr("footer");
-						p().classAttr("pull-right");
-							a().href("#").text(topLinkName).end();
-						end();
-
+					start("footer").classAttr("perf-footer");
 						p().text(createdString).end();
 						p().raw(String.format("&copy; %s mgm technology partners GmbH", Year.now())).end();
 					end();
 				end();
+				script().src("assets/javascripts/perfalyzer.js").end();
 			end();
 		end();
 

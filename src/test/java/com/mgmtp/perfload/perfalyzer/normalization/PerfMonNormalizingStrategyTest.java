@@ -15,23 +15,22 @@
  */
 package com.mgmtp.perfload.perfalyzer.normalization;
 
-import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableList;
-import com.google.common.io.Resources;
-import com.mgmtp.perfload.perfalyzer.util.ChannelData;
-import com.mgmtp.perfload.perfalyzer.util.Marker;
-import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
-import org.testng.annotations.Test;
+import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
+import static com.mgmtp.perfload.perfalyzer.hamcrest.RegexMatchers.matches;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
-import static com.mgmtp.perfload.perfalyzer.hamcrest.RegexMatchers.matches;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
+import org.testng.annotations.Test;
+
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
+import com.mgmtp.perfload.perfalyzer.util.ChannelData;
+import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
 
 /**
  * @author rnaegele
@@ -56,11 +55,11 @@ public class PerfMonNormalizingStrategyTest {
 		List<String> perfMonLines = Resources.readLines(Resources.getResource("normalization/perfmon.out"), Charsets.UTF_8);
 
 		NormalizingStrategy strategy = new PerfMonNormalizingStrategy(new TimestampNormalizer(ZonedDateTime.parse(
-				"2011-12-09T11:54:15.335+01:00"), ZonedDateTime.now(), 0), ImmutableList.<Marker>of());
+				"2011-12-09T11:54:15.335+01:00"), ZonedDateTime.now(), 0));
 
 		boolean firstLine = true;
 		for (String line : perfMonLines) {
-			List<ChannelData> channelDataList = strategy.normalizeLine("", line);
+			List<ChannelData> channelDataList = strategy.normalizeLine(line);
 			if (firstLine) { // the meta line, which we are not interested in
 				assertThat(channelDataList, hasSize(0));
 				firstLine = false;

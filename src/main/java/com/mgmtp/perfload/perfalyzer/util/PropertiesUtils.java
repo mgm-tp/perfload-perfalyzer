@@ -55,7 +55,7 @@ public class PropertiesUtils {
 		}
 	}
 
-	public static void setIfNonNull(Properties properties, String key, String value) {
+	public static void setIfNonNull(final Properties properties, final String key, final String value) {
 		if (value != null) {
 			properties.setProperty(key, value);
 		}

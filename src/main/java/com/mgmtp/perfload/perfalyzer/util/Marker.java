@@ -15,6 +15,12 @@
  */
 package com.mgmtp.perfload.perfalyzer.util;
 
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+
 /**
  * @author ctchinda
  */
@@ -23,14 +29,17 @@ public class Marker {
 	private final String name;
 	private long leftMillis;
 	private long rightMillis;
+	private ZonedDateTime leftDateTime;
+	private ZonedDateTime rightDateTime;
+	private boolean locked;
 
 	public Marker(final String name) {
-		this.name = name;
+		this.name = checkNotNull(name, "'name' must not be null");
 	}
 
 	/**
 	 * check if a given time is within the Marker interval
-	 * 
+	 *
 	 * @param millis
 	 *            the time in milliseconds
 	 */
@@ -57,6 +66,7 @@ public class Marker {
 	 *            the leftMillis to set
 	 */
 	public void setLeftMillis(final long leftMillis) {
+		checkState(!locked, "Markers has already been locked!");
 		this.leftMillis = leftMillis;
 	}
 
@@ -72,6 +82,62 @@ public class Marker {
 	 *            the rightMillis to set
 	 */
 	public void setRightMillis(final long rightMillis) {
+		checkState(!locked, "Markers has already been locked!");
 		this.rightMillis = rightMillis;
+	}
+
+	public ZonedDateTime getLeftDateTime() {
+		return leftDateTime;
+	}
+
+	public ZonedDateTime getRightDateTime() {
+		return rightDateTime;
+	}
+
+	public void calculateDateTimeFields(final ZonedDateTime testStart) {
+		checkState(!locked, "Markers has already been locked!");
+		leftDateTime = testStart.plus(leftMillis, ChronoUnit.MILLIS);
+		rightDateTime = testStart.plus(rightMillis, ChronoUnit.MILLIS);
+		locked = true;
+	}
+
+	/**
+	 * Checks whether the given timestamp is within the time range of the marker, i. e. not before
+	 * the left marker and not after the right marker.
+	 *
+	 * @param timestamp the timestamp
+	 * @return {@code true} if the timestamp is within the time range of the marker
+	 */
+	public boolean isInRange(final ZonedDateTime timestamp) {
+		return !timestamp.isBefore(leftDateTime) && rightDateTime.isAfter(timestamp);
+	}
+
+	@Override
+	public boolean equals(final Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+
+		Marker marker = (Marker) o;
+
+		if (leftMillis != marker.leftMillis) {
+			return false;
+		}
+		if (rightMillis != marker.rightMillis) {
+			return false;
+		}
+		return name.equals(marker.name);
+
+	}
+
+	@Override
+	public int hashCode() {
+		int result = name.hashCode();
+		result = 31 * result + (int) (leftMillis ^ (leftMillis >>> 32));
+		result = 31 * result + (int) (rightMillis ^ (rightMillis >>> 32));
+		return result;
 	}
 }

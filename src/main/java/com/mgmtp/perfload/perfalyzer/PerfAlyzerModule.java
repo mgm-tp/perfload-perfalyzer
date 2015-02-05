@@ -37,6 +37,7 @@ import com.mgmtp.perfload.perfalyzer.annotations.NormalizedDir;
 import com.mgmtp.perfload.perfalyzer.annotations.RelativeDestDir;
 import com.mgmtp.perfload.perfalyzer.annotations.ReportDir;
 import com.mgmtp.perfload.perfalyzer.annotations.ReportPreparationDir;
+import com.mgmtp.perfload.perfalyzer.annotations.ReportTabNames;
 import com.mgmtp.perfload.perfalyzer.annotations.ReportsBaseUrl;
 import com.mgmtp.perfload.perfalyzer.annotations.SmtpProps;
 import com.mgmtp.perfload.perfalyzer.annotations.SubjectProps;
@@ -48,12 +49,14 @@ import com.mgmtp.perfload.perfalyzer.reportpreparation.DisplayData;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator;
 import com.mgmtp.perfload.perfalyzer.util.ArchiveExtracter;
 import com.mgmtp.perfload.perfalyzer.util.Marker;
+import com.mgmtp.perfload.perfalyzer.util.MarkersReader;
 import com.mgmtp.perfload.perfalyzer.util.MemoryFormat;
 import com.mgmtp.perfload.perfalyzer.util.ResourceBundleProvider;
 import com.mgmtp.perfload.perfalyzer.util.ResourceBundleProvider.Utf8Control;
 import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
 import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
 import com.mgmtp.perfload.perfalyzer.workflow.GcLogWorkflow;
+import com.mgmtp.perfload.perfalyzer.workflow.LoadProfileWorkflow;
 import com.mgmtp.perfload.perfalyzer.workflow.MeasuringWorkflow;
 import com.mgmtp.perfload.perfalyzer.workflow.PerfMonWorkflow;
 import com.mgmtp.perfload.perfalyzer.workflow.Workflow;
@@ -84,13 +87,18 @@ import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.beust.jcommander.internal.Lists.newArrayList;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadIntoProperties;
 import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadProperties;
 import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.saveProperties;
 import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.setIfNonNull;
+import static java.util.stream.Collectors.toList;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
+import static org.apache.commons.io.FileUtils.listFiles;
+import static org.apache.commons.io.filefilter.FileFilterUtils.suffixFileFilter;
 
 /**
  * @author rnaegele
@@ -151,8 +159,8 @@ public class PerfAlyzerModule extends AbstractModule {
 			}
 		} else {
 			checkState(unzippedDir.isDirectory(),
-				"Unzipping was turned off, but directory with unzipped files does not exist or is not a directory: %s",
-				unzippedDir);
+					"Unzipping was turned off, but directory with unzipped files does not exist or is not a directory: %s",
+					unzippedDir);
 		}
 
 		createBindingsFromConfigFile(args.outputDir);
@@ -162,6 +170,7 @@ public class PerfAlyzerModule extends AbstractModule {
 		workflowBinder.addBinding().to(PerfMonWorkflow.class);
 		workflowBinder.addBinding().to(MeasuringWorkflow.class);
 		workflowBinder.addBinding().to(GcLogWorkflow.class);
+		workflowBinder.addBinding().to(LoadProfileWorkflow.class);
 
 		bind(WorkflowExecutor.class);
 		bind(PerfAlyzer.class);
@@ -265,7 +274,7 @@ public class PerfAlyzerModule extends AbstractModule {
 					maxEmailHistoryItems = maxHistoryItems;
 				} else {
 					checkState(maxEmailHistoryItems <= maxHistoryItems,
-						"Max. history items in e-mail cannot be greater than global max history items");
+							"Max. history items in e-mail cannot be greater than global max history items");
 				}
 				bindConstant().annotatedWith(MaxEmailHistoryItems.class).to(maxEmailHistoryItems);
 
@@ -287,8 +296,8 @@ public class PerfAlyzerModule extends AbstractModule {
 				String originalLocaleString = localProps.getProperty("locale");
 				if (!originalLocaleString.equals(localeString)) {
 					log.warn(
-						"Configured locale ({}) has changed but is ignored for compatibility reasons with comparison data. Locale used: {}",
-						localeString, originalLocaleString);
+							"Configured locale ({}) has changed but is ignored for compatibility reasons with comparison data. Locale used: {}",
+							localeString, originalLocaleString);
 				}
 				localeString = originalLocaleString;
 			} else {
@@ -360,12 +369,19 @@ public class PerfAlyzerModule extends AbstractModule {
 
 	@Provides
 	@Singleton
-	List<Marker> provideMarkers(@UnzippedDir final File unzippedDir) throws IOException {
-		//		log.info("Loading markers from load profile...");
-		//		File loadProfileFile = getOnlyElement(listFiles(new File(unzippedDir, "console/console-logs"),
-		//				suffixFileFilter(".perfload"), null));
-		//		MarkersReader markerReader = new MarkersReader(loadProfileFile);
-		//		return markerReader.readMarkers();
-		return ImmutableList.of();
+	List<Marker> provideMarkers(@UnzippedDir final File unzippedDir, final TestMetadata testMetadata) throws IOException {
+		log.info("Loading markers from load profile...");
+		File loadProfileFile = getOnlyElement(listFiles(new File(unzippedDir, "console/console-logs"), suffixFileFilter(".perfload"), null));
+		MarkersReader markerReader = new MarkersReader(loadProfileFile, testMetadata.getTestStart());
+		return markerReader.readMarkers();
+	}
+
+	@Provides
+	@Singleton
+	@ReportTabNames
+	List<String> provideReportTabNames(final List<Marker> markers) {
+		List<String> result = newArrayList("Overall");
+		result.addAll(markers.stream().map(Marker::getName).collect(toList()));
+		return result;
 	}
 }
