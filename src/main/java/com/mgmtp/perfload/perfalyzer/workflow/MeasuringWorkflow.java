@@ -15,6 +15,29 @@
  */
 package com.mgmtp.perfload.perfalyzer.workflow;
 
+import static com.google.common.collect.Lists.newArrayList;
+import static com.mgmtp.perfload.perfalyzer.util.DirectoryLister.listPerfAlyzerFiles;
+import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.createTempDir;
+import static com.mgmtp.perfload.perfalyzer.util.PerfFunctions.makeAbsolute;
+import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.fileNameContains;
+import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.perfAlyzerFileNameContains;
+import static java.util.stream.Collectors.toList;
+import static org.apache.commons.io.FileUtils.deleteQuietly;
+
+import java.io.File;
+import java.text.NumberFormat;
+import java.util.List;
+import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
+import org.slf4j.MDC;
+
 import com.google.common.collect.ImmutableList;
 import com.mgmtp.perfload.perfalyzer.PerfAlyzerException;
 import com.mgmtp.perfload.perfalyzer.annotations.FloatFormat;
@@ -41,27 +64,6 @@ import com.mgmtp.perfload.perfalyzer.util.Marker;
 import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
 import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
 import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
-import org.slf4j.MDC;
-
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import java.io.File;
-import java.text.NumberFormat;
-import java.util.List;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.stream.Collectors;
-
-import static com.google.common.collect.Lists.newArrayList;
-import static com.mgmtp.perfload.perfalyzer.util.DirectoryLister.listPerfAlyzerFiles;
-import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.createTempDir;
-import static com.mgmtp.perfload.perfalyzer.util.PerfFunctions.makeAbsolute;
-import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.fileNameContains;
-import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.perfAlyzerFileNameContains;
-import static java.util.stream.Collectors.toList;
-import static org.apache.commons.io.FileUtils.deleteQuietly;
 
 /**
  * @author ctchinda
@@ -117,7 +119,7 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 
 		List<PerfAlyzerFile> inputFiles = listPerfAlyzerFiles(inputDir, marker);
 		inputFiles.stream().filter(perfAlyzerFileNameContains("measuring")).forEach(file -> {
-			Runnable task = () -> {
+			tasks.add(() -> {
 				MDC.put("file", file.getFile().getPath());
 				try {
 					log.info("Binning response times: '{}'", file);
@@ -133,9 +135,8 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 				} finally {
 					MDC.remove("file");
 				}
-			};
-			tasks.add(task);
-			task = () -> {
+			});
+			tasks.add(() -> {
 				MDC.put("file", file.getFile().getPath());
 				try {
 					log.info("Binning requests: '{}'", file);
@@ -152,9 +153,8 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 				} finally {
 					MDC.remove("file");
 				}
-			};
-			tasks.add(task);
-			task = () -> {
+			});
+			tasks.add(() -> {
 				MDC.put("file", file.getFile().getPath());
 				try {
 					log.info("Binning requests: '{}'", file);
@@ -171,9 +171,8 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 				} finally {
 					MDC.remove("file");
 				}
-			};
-			tasks.add(task);
-			task = () -> {
+			});
+			tasks.add(() -> {
 				MDC.put("file", file.getFile().getPath());
 				try {
 					log.info("Binning requests: '{}'", file);
@@ -188,9 +187,8 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 				} finally {
 					MDC.remove("file");
 				}
-			};
-			tasks.add(task);
-			task = () -> {
+			});
+			tasks.add(() -> {
 				MDC.put("file", file.getFile().getPath());
 				try {
 					log.info("Binning errors: '{}'", file);
@@ -205,14 +203,13 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 				} finally {
 					MDC.remove("file");
 				}
-			};
-			tasks.add(task);
+			});
 		});
 
 		// this makes sure that the next tasks has to wai until the already added ones have finished
 		latchProvider.latch = new CountDownLatch(tasks.size());
 
-		Runnable task = () -> {
+		tasks.add(() -> {
 			try {
 				latchProvider.get().await();
 				RequestFilesMerger merger = new RequestFilesMerger(outputDir);
@@ -223,8 +220,7 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 			} catch (Exception ex) {
 				throw new PerfAlyzerException("Error merging files", ex);
 			}
-		};
-		tasks.add(task);
+		});
 
 		return ImmutableList.copyOf(tasks);
 	}

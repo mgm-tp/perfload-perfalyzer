@@ -15,6 +15,34 @@
  */
 package com.mgmtp.perfload.perfalyzer;
 
+import static com.google.common.base.Preconditions.checkState;
+import static com.mgmtp.perfload.perfalyzer.util.DirectoryLister.listAllPerfAlyzerFiles;
+import static com.mgmtp.perfload.perfalyzer.util.DirectoryLister.listPerfAlyzerFiles;
+import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.Files.newByteChannel;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.WRITE;
+import static org.apache.commons.io.FileUtils.copyDirectoryToDirectory;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+import org.apache.commons.lang3.text.StrTokenizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import com.google.common.base.Stopwatch;
@@ -31,34 +59,8 @@ import com.mgmtp.perfload.perfalyzer.annotations.UnzippedDir;
 import com.mgmtp.perfload.perfalyzer.reporting.ReportCreator;
 import com.mgmtp.perfload.perfalyzer.reporting.email.EmailReporter;
 import com.mgmtp.perfload.perfalyzer.util.Marker;
-import com.mgmtp.perfload.perfalyzer.util.NioUtils;
 import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
 import com.mgmtp.perfload.perfalyzer.workflow.WorkflowExecutor;
-import org.apache.commons.lang3.text.StrTokenizer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.channels.WritableByteChannel;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-
-import static com.google.common.base.Preconditions.checkState;
-import static com.mgmtp.perfload.perfalyzer.util.DirectoryLister.listAllPerfAlyzerFiles;
-import static com.mgmtp.perfload.perfalyzer.util.DirectoryLister.listPerfAlyzerFiles;
-import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.nio.file.Files.newByteChannel;
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.WRITE;
-import static org.apache.commons.io.FileUtils.copyDirectoryToDirectory;
-import static org.apache.commons.io.FileUtils.deleteDirectory;
 
 /**
  * The PerfAlyzer class is the entry point for the application.
@@ -212,37 +214,38 @@ public class PerfAlyzer {
 
 	private void extractFilesForMarkers() {
 		if (!markers.isEmpty()) {
-			StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
-			tokenizer.setDelimiterChar(';');
-
 			listPerfAlyzerFiles(normalizedDir)
-					.stream()
-					.filter(perfAlyzerFile -> {
-						// GC logs cannot split up here and need to explicitly handle markers later.
-						// Load profiles contains the markers themselves and thus need to be filtered out as well.
-						String fileName = perfAlyzerFile.getFile().getName();
-						return !fileName.contains("gclog") & !fileName.contains("[loadprofile]");
-					})
-					.forEach(perfAlyzerFile -> markers.forEach(marker -> {
+			.stream()
+			.filter(perfAlyzerFile -> {
+				// GC logs cannot split up here and need to explicitly handle markers later.
+				// Load profiles contains the markers themselves and thus need to be filtered out as well.
+				String fileName = perfAlyzerFile.getFile().getName();
+				return !fileName.contains("gclog") & !fileName.contains("[loadprofile]");
+			} )
+			.forEach(perfAlyzerFile -> markers.forEach(marker -> {
+				PerfAlyzerFile markerFile = perfAlyzerFile.copy();
+				markerFile.setMarker(marker.getName());
+				Path destPath = normalizedDir.toPath().resolve(markerFile.getFile().toPath());
+
+				try (WritableByteChannel destChannel = newByteChannel(destPath, CREATE, WRITE)) {
+					Path srcPath = normalizedDir.toPath().resolve(perfAlyzerFile.getFile().toPath());
+					StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
+					tokenizer.setDelimiterChar(';');
+					Files.lines(srcPath, UTF_8).filter(line -> {
 						try {
-							PerfAlyzerFile markerFile = perfAlyzerFile.copy();
-							markerFile.setMarker(marker.getName());
-
-							Path destPath = normalizedDir.toPath().resolve(markerFile.getFile().toPath());
-							WritableByteChannel destChannel = newByteChannel(destPath, CREATE, WRITE);
-
-							Path srcPath = normalizedDir.toPath().resolve(perfAlyzerFile.getFile().toPath());
-							NioUtils.lines(srcPath, UTF_8)
-									.filter(s -> {
-										tokenizer.reset(s);
-										long timestamp = Long.parseLong(tokenizer.nextToken());
-										return marker.getLeftMillis() <= timestamp && marker.getRightMillis() > timestamp;
-									})
-									.forEach(s -> writeLineToChannel(destChannel, s, UTF_8));
-						} catch (IOException e) {
-							throw new UncheckedIOException(e);
+							tokenizer.reset(line);
+							String timestampString = tokenizer.nextToken();
+							long timestamp = Long.parseLong(timestampString);
+							return marker.getLeftMillis() <= timestamp && marker.getRightMillis() > timestamp;
+						} catch (NumberFormatException ex) {
+							LOG.error("Invalid data line: {}", line);
+							return false;
 						}
-					}));
+					} ).forEach(line -> writeLineToChannel(destChannel, line, UTF_8));
+				} catch (IOException e) {
+					throw new UncheckedIOException(e);
+				}
+			} ));
 		}
 	}
 
