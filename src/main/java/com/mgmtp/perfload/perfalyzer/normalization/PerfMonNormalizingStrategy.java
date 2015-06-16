@@ -21,13 +21,13 @@ import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMI
 import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 
 import org.apache.commons.lang3.text.StrBuilder;
 import org.apache.commons.lang3.text.StrTokenizer;
-import java.time.ZonedDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +37,7 @@ import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
 
 /**
  * Normalizing implementation for perfMon logs.
- * 
+ *
  * @author rnaegele
  */
 public class PerfMonNormalizingStrategy implements NormalizingStrategy {
@@ -130,6 +130,7 @@ public class PerfMonNormalizingStrategy implements NormalizingStrategy {
 
 		switch (typeConfig) {
 			case CPU:
+			case DOCKER_CPU:
 				result.add(new ValueHolder(tokenList.get(2)));
 				break;
 			case IO:
@@ -138,6 +139,7 @@ public class PerfMonNormalizingStrategy implements NormalizingStrategy {
 				break;
 			case MEM:
 			case SWAP:
+			case DOCKER_MEM:
 				result.add(new ValueHolder(tokenList.get(3)));
 				break;
 			case JAVA:
