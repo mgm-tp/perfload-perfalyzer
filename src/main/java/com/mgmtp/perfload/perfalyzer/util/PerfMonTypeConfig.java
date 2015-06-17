@@ -36,8 +36,8 @@ public enum PerfMonTypeConfig {
 	IO("io_\\d+(?:_(?:r|w))?", true, 1d / 1024d, HEADER_MEAN, AGGR_HEADERS_1, MEAN),
 	MEM("mem", 1d / 1024d, HEADER_MEDIAN, AGGR_HEADERS_2, MEDIAN),
 	SWAP("swap", 1d / 1024d, HEADER_MEDIAN, AGGR_HEADERS_2, MEDIAN),
-	DOCKER_CPU("docker_cpu_X|\\S+", HEADER_MEAN, AGGR_HEADERS_1, MEAN),
-	DOCKER_MEM("docker_mem|\\S+", 1d / 1024d, HEADER_MEDIAN, AGGR_HEADERS_2, MEDIAN);
+	DOCKER_CPU("docker_cpu_X\\|\\S+", HEADER_MEAN, AGGR_HEADERS_1, MEAN),
+	DOCKER_MEM("docker_mem\\|\\S+", 1d / 1024d, HEADER_MEDIAN, AGGR_HEADERS_2, MEDIAN);
 
 	static class Constants {
 		static final String HEADER_MEAN = "mean";
