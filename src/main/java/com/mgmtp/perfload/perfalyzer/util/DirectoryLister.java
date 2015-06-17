@@ -41,7 +41,8 @@ public class DirectoryLister {
 	public static List<File> listFiles(final File baseDir) {
 		try (Stream<Path> stream = walk(baseDir.toPath())) {
 			return stream.filter(Files::isRegularFile)
-						 .map(path -> makeRelative(baseDir, path.toFile())).collect(toList());
+					.filter(path -> path.toFile().length() > 0L)
+					.map(path -> makeRelative(baseDir, path.toFile())).collect(toList());
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
@@ -54,8 +55,9 @@ public class DirectoryLister {
 	public static List<PerfAlyzerFile> listAllPerfAlyzerFiles(final File baseDir) {
 		try (Stream<Path> stream = walk(baseDir.toPath())) {
 			return stream.filter(Files::isRegularFile)
-						 .map(path -> PerfAlyzerFile.create(makeRelative(baseDir, path.toFile())))
-						 .collect(toList());
+					.filter(path -> path.toFile().length() > 0L)
+					.map(path -> PerfAlyzerFile.create(makeRelative(baseDir, path.toFile())))
+					.collect(toList());
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -64,10 +66,11 @@ public class DirectoryLister {
 	public static List<PerfAlyzerFile> listPerfAlyzerFiles(final File baseDir, final Marker marker) {
 		try (Stream<Path> stream = walk(baseDir.toPath())) {
 			Stream<PerfAlyzerFile> fileStream = stream.filter(Files::isRegularFile)
-													  .map(path -> PerfAlyzerFile.create(makeRelative(baseDir, path.toFile())));
+					.filter(path -> path.toFile().length() > 0L)
+					.map(path -> PerfAlyzerFile.create(makeRelative(baseDir, path.toFile())));
 			fileStream = marker == null
-						 ? fileStream.filter(perfAlyzerFile -> perfAlyzerFile.getMarker() == null)
-						 : fileStream.filter(perfAlyzerFile -> marker.getName().equals(perfAlyzerFile.getMarker()));
+					? fileStream.filter(perfAlyzerFile -> perfAlyzerFile.getMarker() == null)
+					: fileStream.filter(perfAlyzerFile -> marker.getName().equals(perfAlyzerFile.getMarker()));
 			return fileStream.collect(toList());
 		} catch (IOException e) {
 			throw new RuntimeException(e);
