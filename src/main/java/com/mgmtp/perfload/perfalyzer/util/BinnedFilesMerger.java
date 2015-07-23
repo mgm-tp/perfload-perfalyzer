@@ -15,10 +15,9 @@
  */
 package com.mgmtp.perfload.perfalyzer.util;
 
-import com.google.common.base.Charsets;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.text.StrBuilder;
-import org.apache.commons.lang3.text.StrTokenizer;
+import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Maps.newHashMap;
+import static org.apache.commons.io.IOUtils.closeQuietly;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,9 +29,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Maps.newHashMap;
-import static org.apache.commons.io.IOUtils.closeQuietly;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.text.StrBuilder;
+import org.apache.commons.lang3.text.StrTokenizer;
+
+import com.google.common.base.Charsets;
 
 /**
  * @author ctchinda
@@ -67,7 +68,7 @@ public class BinnedFilesMerger {
 				FileInputStream fis = null;
 				try {
 					fis = new FileInputStream(file);
-					for (Scanner scanner = new Scanner(fis.getChannel(), Charsets.UTF_8.name()); scanner.hasNext();) {
+					for (Scanner scanner = new Scanner(fis, Charsets.UTF_8.name()); scanner.hasNext();) {
 						String line = scanner.nextLine();
 						tokenizer.reset(line);
 

@@ -15,7 +15,8 @@
  */
 package com.mgmtp.perfload.perfalyzer.util;
 
-import org.apache.commons.lang3.text.StrTokenizer;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
+import static java.util.stream.Collectors.toList;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,8 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
-import static java.util.stream.Collectors.toList;
+import org.apache.commons.lang3.text.StrTokenizer;
 
 /**
  * @author ctchinda
@@ -59,7 +59,7 @@ public class MarkersReader {
 
 		try (FileInputStream fis = new FileInputStream(inputFile)) {
 
-			for (Scanner scanner = new Scanner(fis.getChannel()); scanner.hasNext(); ) {
+			for (Scanner scanner = new Scanner(fis); scanner.hasNext(); ) {
 				String line = scanner.nextLine();
 				if (line.startsWith("#")) {
 					continue;

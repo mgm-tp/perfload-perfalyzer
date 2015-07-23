@@ -15,9 +15,9 @@
  */
 package com.mgmtp.perfload.perfalyzer.util;
 
-import com.google.common.collect.ImmutableSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.collect.Iterators.mergeSorted;
+import static com.google.common.io.Files.createParentDirs;
+import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
 
 import java.io.Closeable;
 import java.io.File;
@@ -35,20 +35,14 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
-import static com.google.common.collect.Iterators.mergeSorted;
-import static com.google.common.io.Files.createParentDirs;
-import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
+import com.google.common.collect.ImmutableSet;
 
 /**
  * Merges multiple CSV files into a single one.
  *
- * @param <T>
- * 		the type of objects that may be compared by this comparator
  * @author rnaegele
  */
 public class CsvFileSortMerger {
-	private static final Logger LOGGER = LoggerFactory.getLogger(CsvFileSortMerger.class);
-
 	private final Set<File> sourceFiles;
 	private final File destFile;
 	private final Comparator<String> comparator;
@@ -61,7 +55,7 @@ public class CsvFileSortMerger {
 	 * @param comparator
 	 * 		the comparator to use for sorting
 	 */
-	public CsvFileSortMerger(final Set<File> sourceFiles, final File destFile, Comparator<String> comparator) {
+	public CsvFileSortMerger(final Set<File> sourceFiles, final File destFile, final Comparator<String> comparator) {
 		this.comparator = comparator;
 		this.sourceFiles = ImmutableSet.copyOf(sourceFiles);
 		this.destFile = destFile;
@@ -69,8 +63,6 @@ public class CsvFileSortMerger {
 
 	/**
 	 * Merges the files specified in the constructor into the destination file.
-	 *
-	 * @throws IOException
 	 */
 	public void mergeFiles() throws IOException {
 		createParentDirs(destFile);
@@ -98,7 +90,7 @@ public class CsvFileSortMerger {
 			this.file = file;
 		}
 
-		public static Slot openSlot(File file) {
+		public static Slot openSlot(final File file) {
 			Slot slot = new Slot(file);
 			slot.doOpen();
 			return slot;
@@ -108,7 +100,7 @@ public class CsvFileSortMerger {
 			try {
 				if (inputStream == null) {
 					inputStream = new FileInputStream(file);
-					scanner = new Scanner(inputStream.getChannel());
+					scanner = new Scanner(inputStream);
 				}
 			} catch (FileNotFoundException ex) {
 				throw new UncheckedIOException(ex);
