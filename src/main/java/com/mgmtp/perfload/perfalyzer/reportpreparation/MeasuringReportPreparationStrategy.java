@@ -15,35 +15,6 @@
  */
 package com.mgmtp.perfload.perfalyzer.reportpreparation;
 
-import com.google.common.base.Charsets;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ListMultimap;
-import com.google.common.io.Files;
-import com.google.common.io.LineReader;
-import com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants;
-import com.mgmtp.perfload.perfalyzer.reportpreparation.NumberDataSet.SeriesPoint;
-import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator.AxisType;
-import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator.ChartDimensions;
-import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator.RendererType;
-import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
-import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
-import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.lang3.text.StrBuilder;
-import org.apache.commons.lang3.text.StrTokenizer;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.channels.FileChannel;
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
-import java.util.Set;
-
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static com.google.common.collect.Sets.newHashSet;
@@ -58,6 +29,36 @@ import static java.lang.Math.min;
 import static org.apache.commons.io.FileUtils.copyFile;
 import static org.apache.commons.io.FileUtils.writeLines;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.channels.FileChannel;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ResourceBundle;
+import java.util.Set;
+
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.text.StrBuilder;
+import org.apache.commons.lang3.text.StrTokenizer;
+
+import com.google.common.base.Charsets;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ListMultimap;
+import com.google.common.io.Files;
+import com.google.common.io.LineReader;
+import com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants;
+import com.mgmtp.perfload.perfalyzer.reportpreparation.NumberDataSet.SeriesPoint;
+import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator.AxisType;
+import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator.ChartDimensions;
+import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator.RendererType;
+import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
+import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
 
 /**
  * @author rnaegele
@@ -86,7 +87,7 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 				new RequestsPerPeriodByOperationHandler(sourceDir, destDir, PerfAlyzerConstants.BIN_SIZE_MILLIS_1_MINUTE),
 				new RequestsPerPeriodByOperationHandler(sourceDir, destDir, PerfAlyzerConstants.BIN_SIZE_MILLIS_1_SECOND),
 				new ErrorsHandler(sourceDir, destDir)
-		);
+				);
 
 		for (PerfAlyzerFile f : files) {
 			log.info("Processing file '{}'...", f);
@@ -192,9 +193,10 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 					String mappingKey = substringAfter(f.getFileNameParts().get(2), "_");
 					dataSet.addSeries(mappingKey, dataList);
 				}
-
-				plotCreator.writePlotFile(destFile, AxisType.LOGARITHMIC, AxisType.LOGARITHMIC, RendererType.SHAPES,
-						ChartDimensions.LARGE, null, false, dataSet);
+				if (!dataSet.isEmpty()) {
+					plotCreator.writePlotFile(destFile, AxisType.LOGARITHMIC, AxisType.LOGARITHMIC, RendererType.SHAPES,
+							ChartDimensions.LARGE, null, false, dataSet);
+				}
 			}
 		}
 	}
@@ -244,8 +246,10 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 				}
 			}
 
-			plotCreator.writePlotFile(new File(destDir, destFile.getFile().getPath()), AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES,
-					ChartDimensions.WIDE, dataRange, false, dataSet);
+			if (!dataSet.isEmpty()) {
+				plotCreator.writePlotFile(new File(destDir, destFile.getFile().getPath()), AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES,
+						ChartDimensions.WIDE, dataRange, false, dataSet);
+			}
 		}
 	}
 
@@ -296,8 +300,10 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 				}
 			}
 
-			plotCreator.writePlotFile(new File(destDir, destFile.getFile().getPath()), AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES,
-					ChartDimensions.WIDE, dataRange, false, dataSet);
+			if (!dataSet.isEmpty()) {
+				plotCreator.writePlotFile(new File(destDir, destFile.getFile().getPath()), AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES,
+						ChartDimensions.WIDE, dataRange, false, dataSet);
+			}
 		}
 	}
 
@@ -481,8 +487,10 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 				}
 			}
 
-			plotCreator.writePlotFile(new File(destDir, destFile.getFile().getPath()), AxisType.LINEAR, AxisType.LINEAR,
-					RendererType.LINES, ChartDimensions.WIDE, dataRange, false, dataSet);
+			if (!dataSet.isEmpty()) {
+				plotCreator.writePlotFile(new File(destDir, destFile.getFile().getPath()), AxisType.LINEAR, AxisType.LINEAR,
+						RendererType.LINES, ChartDimensions.WIDE, dataRange, false, dataSet);
+			}
 		}
 	}
 
@@ -532,27 +540,29 @@ public class MeasuringReportPreparationStrategy extends AbstractReportPreparatio
 				}
 			}
 
-			File targetFile = new File(destDir, destFile.getFile().getPath());
-			plotCreator.writePlotFile(targetFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES, ChartDimensions.DEFAULT,
-					dataRange, false, dataSet);
+			if (!dataSet.isEmpty()) {
+				File targetFile = new File(destDir, destFile.getFile().getPath());
+				plotCreator.writePlotFile(targetFile, AxisType.LINEAR, AxisType.LINEAR, RendererType.LINES, ChartDimensions.DEFAULT,
+						dataRange, false, dataSet);
 
-			targetFile = new File(destDir, destFile.copy().setExtension("csv").getFile().getPath());
-			try (FileOutputStream fos = new FileOutputStream(targetFile)) {
-				FileChannel channel = fos.getChannel();
+				targetFile = new File(destDir, destFile.copy().setExtension("csv").getFile().getPath());
+				try (FileOutputStream fos = new FileOutputStream(targetFile)) {
+					FileChannel channel = fos.getChannel();
 
-				boolean needsHeader = true;
-				for (PerfAlyzerFile paf : errorsByType) {
-					try (BufferedReader br = Files.newReader(new File(sourceDir, paf.getFile().getPath()), Charsets.UTF_8)) {
+					boolean needsHeader = true;
+					for (PerfAlyzerFile paf : errorsByType) {
+						try (BufferedReader br = Files.newReader(new File(sourceDir, paf.getFile().getPath()), Charsets.UTF_8)) {
 
-						String header = br.readLine();
-						if (needsHeader) {
-							writeLineToChannel(channel, "\"operation\"" + DELIMITER + header, Charsets.UTF_8);
-							needsHeader = false;
-						}
+							String header = br.readLine();
+							if (needsHeader) {
+								writeLineToChannel(channel, "\"operation\"" + DELIMITER + header, Charsets.UTF_8);
+								needsHeader = false;
+							}
 
-						String operation = paf.getFileNameParts().get(1);
-						for (String line; (line = br.readLine()) != null; ) {
-							writeLineToChannel(channel, "\"" + operation + "\"" + DELIMITER + line, Charsets.UTF_8);
+							String operation = paf.getFileNameParts().get(1);
+							for (String line; (line = br.readLine()) != null; ) {
+								writeLineToChannel(channel, "\"" + operation + "\"" + DELIMITER + line, Charsets.UTF_8);
+							}
 						}
 					}
 				}
