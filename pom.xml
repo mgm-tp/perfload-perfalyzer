@@ -25,7 +25,7 @@
 		<artifactId>mgm-oss-parent</artifactId>
 		<version>15</version>
 	</parent>
-	<groupId>com.mgmtp.perfload</groupId>
+	<groupId>com.mgmtp.perfload.perfalyzer</groupId>
 	<artifactId>perfload-perfalyzer</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	<name>mgm perfLoad perfAlyzer</name>
