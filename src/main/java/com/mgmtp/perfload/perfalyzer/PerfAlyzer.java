@@ -34,6 +34,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -174,7 +175,8 @@ public class PerfAlyzer {
 			}
 		} else {
 			checkState(binnedDir.isDirectory(),
-					"Binning was turned off, but directory with binned files does not exist or is not a directory: %s", binnedDir);
+					"Binning was turned off, but directory with binned files does not exist or is not a directory: %s",
+					binnedDir);
 		}
 
 		if (doReportPreparation) {
@@ -183,8 +185,7 @@ public class PerfAlyzer {
 				deleteDirectory(reportPreparationDir);
 			}
 		} else {
-			checkState(
-					reportPreparationDir.isDirectory(),
+			checkState(reportPreparationDir.isDirectory(),
 					"Report preparation was turned off, but directory with report preparation files does not exist or is not a directory: %s",
 					reportPreparationDir);
 		}
@@ -214,15 +215,14 @@ public class PerfAlyzer {
 
 	private void extractFilesForMarkers() {
 		if (!markers.isEmpty()) {
-			listPerfAlyzerFiles(normalizedDir)
-			.stream()
-			.filter(perfAlyzerFile -> {
-				// GC logs cannot split up here and need to explicitly handle markers later.
-				// Load profiles contains the markers themselves and thus need to be filtered out as well.
+			listPerfAlyzerFiles(normalizedDir).stream().filter(perfAlyzerFile -> {
+				// GC logs cannot split up here and need to explicitly handle
+				// markers later.
+				// Load profiles contains the markers themselves and thus need
+				// to be filtered out as well.
 				String fileName = perfAlyzerFile.getFile().getName();
 				return !fileName.contains("gclog") & !fileName.contains("[loadprofile]");
-			} )
-			.forEach(perfAlyzerFile -> markers.forEach(marker -> {
+			}).forEach(perfAlyzerFile -> markers.forEach(marker -> {
 				PerfAlyzerFile markerFile = perfAlyzerFile.copy();
 				markerFile.setMarker(marker.getName());
 				Path destPath = normalizedDir.toPath().resolve(markerFile.getFile().toPath());
@@ -231,21 +231,23 @@ public class PerfAlyzer {
 					Path srcPath = normalizedDir.toPath().resolve(perfAlyzerFile.getFile().toPath());
 					StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
 					tokenizer.setDelimiterChar(';');
-					Files.lines(srcPath, UTF_8).filter(line -> {
-						try {
-							tokenizer.reset(line);
-							String timestampString = tokenizer.nextToken();
-							long timestamp = Long.parseLong(timestampString);
-							return marker.getLeftMillis() <= timestamp && marker.getRightMillis() > timestamp;
-						} catch (NumberFormatException ex) {
-							LOG.error("Invalid data line: {}", line);
-							return false;
-						}
-					} ).forEach(line -> writeLineToChannel(destChannel, line, UTF_8));
+					try (Stream<String> lines = Files.lines(srcPath, UTF_8);) {
+						lines.filter(line -> {
+							try {
+								tokenizer.reset(line);
+								String timestampString = tokenizer.nextToken();
+								long timestamp = Long.parseLong(timestampString);
+								return marker.getLeftMillis() <= timestamp && marker.getRightMillis() > timestamp;
+							} catch (NumberFormatException ex) {
+								LOG.error("Invalid data line: {}", line);
+								return false;
+							}
+						}).forEach(line -> writeLineToChannel(destChannel, line, UTF_8));
+					}
 				} catch (IOException e) {
 					throw new UncheckedIOException(e);
 				}
-			} ));
+			}));
 		}
 	}
 
