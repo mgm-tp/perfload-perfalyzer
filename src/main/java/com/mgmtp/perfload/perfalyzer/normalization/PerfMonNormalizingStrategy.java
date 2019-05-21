@@ -145,6 +145,15 @@ public class PerfMonNormalizingStrategy implements NormalizingStrategy {
 			case JAVA:
 				result.add(new ValueHolder(substringBefore(tokenList.get(tokenList.size() - 2), "%")));
 				break;
+			case NET:
+				result.add(new ValueHolder(tokenList.get(2), "inConn"));
+				result.add(new ValueHolder(tokenList.get(3), "outConn"));
+				break;
+			case TCP:
+				result.add(new ValueHolder(tokenList.get(7), "inSeg"));
+				result.add(new ValueHolder(tokenList.get(8), "outSeg"));
+				result.add(new ValueHolder(tokenList.get(9), "retransSeg"));
+				break;
 			default:
 				throw new IllegalStateException("Invalid perfMon data type");
 		}

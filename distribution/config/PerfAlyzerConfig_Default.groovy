@@ -46,6 +46,16 @@ formats {
 		unitX = 'axis.label.timeSeconds'
 		unitY = ['axis.label.meanPercent']
 	}
+	perfmonNet {
+		pattern = ~/\[perfmon\]\[net_(?:in|out)Conn\].*/
+		unitX = 'axis.label.timeSeconds'
+		unitY = ['axis.label.number']
+	}
+	perfmonTCP {
+		pattern = ~/\[perfmon\]\[tcp_(?:in|out|retrans)Seg\].*/
+		unitX = 'axis.label.timeSeconds'
+		unitY = ['axis.label.number']
+	}
 	measuringDistribution {
 		pattern = ~/\[measuring\]\[[^]]+\]\[distribution\].*/
 		unitX = 'axis.label.timeMillis'
@@ -113,7 +123,7 @@ reportContents {
 	// Files matching any of these expressions will be excluded from the report.
 	exclusions = [
 		~/global[\\\\/]\[perfmon\]\[java\].*/,
-		~/.*(?<!global)[\\\\/]\[perfmon\]\[(?:mem|swap|cpu_X|io_(?:r|w))\].*/,
+		~/.*(?<!global)[\\\\/]\[perfmon\]\[(?:mem|swap|cpu_X|io_(?:r|w)|net.*|tcp.*)\].*/,
 		~/console[\\\\/]\[loadprofile\].*/
 	]
 }

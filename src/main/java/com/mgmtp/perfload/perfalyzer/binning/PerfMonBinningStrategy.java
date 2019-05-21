@@ -108,6 +108,8 @@ public class PerfMonBinningStrategy extends AbstractBinningStrategy {
 		switch (typeConfig) {
 			case CPU:
 			case IO:
+			case TCP:
+			case NET:
 			case JAVA:
 				String mean = intNumberFormat.format(StatUtils.mean(allValues));
 				appendEscapedAndQuoted(sb, DELIMITER, min, mean, max);
