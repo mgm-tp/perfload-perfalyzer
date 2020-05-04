@@ -1,0 +1,11 @@
+perfload.implementation.version=4.8.0
+perfload.implementation.date=2016-06-15T15:24:40+0000
+perfload.implementation.revision=d51b414
+test.file=dd_fs_3step.xml
+test.start=2000-01-01T11:00:00.72+02:00
+test.finish=2000-01-01T11:00:00.73+02:00
+daemon.1=lisamgmltclient:20000
+targets=appserver
+operations=emptysync
+executions.emptysync.appserver=27000
+test.comment=Regression 1.8.17-20190918.153750-e0df4ef1b
