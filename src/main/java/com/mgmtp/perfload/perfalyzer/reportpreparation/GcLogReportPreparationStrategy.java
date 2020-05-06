@@ -30,6 +30,8 @@ import com.tagtraum.perf.gcviewer.imp.DataReaderFactory;
 import com.tagtraum.perf.gcviewer.math.IntData;
 import com.tagtraum.perf.gcviewer.model.GCEvent;
 import com.tagtraum.perf.gcviewer.model.GCModel;
+import com.tagtraum.perf.gcviewer.model.GCResource;
+import com.tagtraum.perf.gcviewer.model.GcResourceFile;
 import org.apache.commons.lang3.text.StrBuilder;
 
 import java.io.File;
@@ -55,6 +57,7 @@ public class GcLogReportPreparationStrategy extends AbstractReportPreparationStr
 	private final TimestampNormalizer timestampNormalizer;
 	private final MemoryFormat memoryFormat;
 	private final Marker marker;
+	int numberOfLinesParsed=0;
 
 	public GcLogReportPreparationStrategy(final NumberFormat intNumberFormat,
 			final NumberFormat floatNumberFormat, final List<DisplayData> displayDataList,
@@ -73,7 +76,8 @@ public class GcLogReportPreparationStrategy extends AbstractReportPreparationStr
 
 			GCModel origModel;
 			try (InputStream is = new FileInputStream(new File(sourceDir, f.getFile().getPath()))) {
-				DataReader dataReader = new DataReaderFactory().getDataReader(is);
+				GcResourceFile resource=new GcResourceFile(f.getFile());
+				DataReader dataReader = new DataReaderFactory().getDataReader(resource, is);
 				origModel = dataReader.read();
 			} catch (IOException ex) {
 				log.error("Error reading GC log file: " + f.getFile(), ex);
@@ -82,6 +86,7 @@ public class GcLogReportPreparationStrategy extends AbstractReportPreparationStr
 
 			GCModel model = new GCModel();
 			model.setFormat(origModel.getFormat());
+			numberOfLinesParsed+=origModel.size();
 
 			for (Iterator<GCEvent> it = origModel.getGCEvents(); it.hasNext(); ) {
 				GCEvent event = it.next();
