@@ -100,6 +100,7 @@
 							<exclude>**/*.out</exclude>
 							<exclude>**/*.version</exclude>
 							<exclude>**/*.csv</exclude>
+							<exclude>**/*.props</exclude>
 							<exclude>.sass-cache/**</exclude>
 							<exclude>src/main/sass/bootstrap/**</exclude>
 						</excludes>
