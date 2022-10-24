@@ -52,7 +52,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.apache.commons.lang3.text.StrTokenizer;
 import org.slf4j.Logger;
@@ -89,7 +88,6 @@ public class PerfAlyzer {
 	private final EmailReporter emailReporter;
 	private final List<Marker> markers;
 
-	@Inject
 	public PerfAlyzer(@UnzippedDir final File unzippedDir,
 			@BinnedDir final File binningDir,
 			@NormalizedDir final File normalizedDir,
