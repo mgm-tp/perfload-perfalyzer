@@ -26,29 +26,9 @@ import static java.nio.file.StandardOpenOption.WRITE;
 import static org.apache.commons.io.FileUtils.copyDirectoryToDirectory;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.channels.WritableByteChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.stream.Stream;
-
-import javax.annotation.Nullable;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
-import org.apache.commons.lang3.text.StrTokenizer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import com.google.common.base.Stopwatch;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 import com.mgmtp.perfload.perfalyzer.annotations.BinnedDir;
 import com.mgmtp.perfload.perfalyzer.annotations.DoBinning;
 import com.mgmtp.perfload.perfalyzer.annotations.DoNormalization;
@@ -62,11 +42,32 @@ import com.mgmtp.perfload.perfalyzer.reporting.email.EmailReporter;
 import com.mgmtp.perfload.perfalyzer.util.Marker;
 import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
 import com.mgmtp.perfload.perfalyzer.workflow.WorkflowExecutor;
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.stream.Stream;
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import org.apache.commons.lang3.text.StrTokenizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The PerfAlyzer class is the entry point for the application.
  *
  * @author ctchinda
+ * 
+ * @version 2
+ * @since 19.10.2022
+ * @coauthor aneugebauer
+ * 
+ *           Changes: Removed Guice injection.
  */
 @Singleton
 public class PerfAlyzer {
@@ -89,12 +90,18 @@ public class PerfAlyzer {
 	private final List<Marker> markers;
 
 	@Inject
-	public PerfAlyzer(@UnzippedDir final File unzippedDir, @BinnedDir final File binningDir,
-			@NormalizedDir final File normalizedDir, @ReportPreparationDir final File reportPreparationDir,
-			@ReportDir final File reportDir, @DoNormalization final boolean doNormalization,
-			@DoBinning final boolean doBinning, @DoReportPreparation final boolean doReportPreparation,
-			final WorkflowExecutor workflowExecutor, final ReportCreator reportCreator,
-			@Nullable final EmailReporter emailReporter, final List<Marker> markers) {
+	public PerfAlyzer(@UnzippedDir final File unzippedDir,
+			@BinnedDir final File binningDir,
+			@NormalizedDir final File normalizedDir,
+			@ReportPreparationDir final File reportPreparationDir,
+			@ReportDir final File reportDir,
+			@DoNormalization final boolean doNormalization,
+			@DoBinning final boolean doBinning,
+			@DoReportPreparation final boolean doReportPreparation,
+			final WorkflowExecutor workflowExecutor,
+			final ReportCreator reportCreator,
+			@Nullable final EmailReporter emailReporter,
+			final List<Marker> markers) {
 
 		this.unzippedDir = unzippedDir;
 		this.binnedDir = binningDir;
@@ -128,11 +135,11 @@ public class PerfAlyzer {
 			jCmd = new JCommander(perfAlyzerArgs);
 			jCmd.parse(args);
 
-			Injector injector = Guice.createInjector(new PerfAlyzerModule(perfAlyzerArgs));
-			PerfAlyzer perfAlyzer = injector.getInstance(PerfAlyzer.class);
+			PerfAlyzerFactory perfAlyzerFactory = new PerfAlyzerFactory(perfAlyzerArgs);
+			PerfAlyzer perfAlyzer = perfAlyzerFactory.getPerfAlyzer();
 			perfAlyzer.runPerfAlyzer();
 
-			ExecutorService executorService = injector.getInstance(ExecutorService.class);
+			ExecutorService executorService = perfAlyzerFactory.getExecutorService();
 			executorService.shutdownNow();
 
 			stopwatch.stop();
@@ -159,11 +166,13 @@ public class PerfAlyzer {
 	private void checkDirs() throws IOException {
 		if (doNormalization) {
 			if (normalizedDir.isDirectory()) {
-				LOG.info("Directory '{}' already exists. Deleting it...", normalizedDir);
+				LOG.info("Directory '{}' already exists. Deleting it...",
+						normalizedDir);
 				deleteDirectory(normalizedDir);
 			}
 		} else {
-			checkState(normalizedDir.isDirectory(),
+			checkState(
+					normalizedDir.isDirectory(),
 					"Normalization was turned off, but directory with normalized files does not exist or is not a directory: %s",
 					normalizedDir);
 		}
@@ -174,18 +183,21 @@ public class PerfAlyzer {
 				deleteDirectory(binnedDir);
 			}
 		} else {
-			checkState(binnedDir.isDirectory(),
+			checkState(
+					binnedDir.isDirectory(),
 					"Binning was turned off, but directory with binned files does not exist or is not a directory: %s",
 					binnedDir);
 		}
 
 		if (doReportPreparation) {
 			if (reportPreparationDir.isDirectory()) {
-				LOG.info("Directory '{}' already exists. Deleting it...", reportPreparationDir);
+				LOG.info("Directory '{}' already exists. Deleting it...",
+						reportPreparationDir);
 				deleteDirectory(reportPreparationDir);
 			}
 		} else {
-			checkState(reportPreparationDir.isDirectory(),
+			checkState(
+					reportPreparationDir.isDirectory(),
 					"Report preparation was turned off, but directory with report preparation files does not exist or is not a directory: %s",
 					reportPreparationDir);
 		}
@@ -209,45 +221,55 @@ public class PerfAlyzer {
 		}
 
 		if (doReportPreparation) {
-			workflowExecutor.executeReportPreparationTasks(binnedDir, reportPreparationDir);
+			workflowExecutor.executeReportPreparationTasks(binnedDir,
+					reportPreparationDir);
 		}
 	}
 
 	private void extractFilesForMarkers() {
 		if (!markers.isEmpty()) {
-			listPerfAlyzerFiles(normalizedDir).stream().filter(perfAlyzerFile -> {
-				// GC logs cannot split up here and need to explicitly handle
-				// markers later.
-				// Load profiles contains the markers themselves and thus need
-				// to be filtered out as well.
-				String fileName = perfAlyzerFile.getFile().getName();
-				return !fileName.contains("gclog") & !fileName.contains("[loadprofile]");
-			}).forEach(perfAlyzerFile -> markers.forEach(marker -> {
-				PerfAlyzerFile markerFile = perfAlyzerFile.copy();
-				markerFile.setMarker(marker.getName());
-				Path destPath = normalizedDir.toPath().resolve(markerFile.getFile().toPath());
+			listPerfAlyzerFiles(normalizedDir)
+					.stream()
+					.filter(perfAlyzerFile -> {
+						// GC logs cannot split up here and need to explicitly handle
+						// markers later.
+						// Load profiles contains the markers themselves and thus need
+						// to be filtered out as well.
+						String fileName = perfAlyzerFile.getFile().getName();
+						return !fileName.contains("gclog") &
+								!fileName.contains("[loadprofile]");
+					})
+					.forEach(perfAlyzerFile -> markers.forEach(marker -> {
+						PerfAlyzerFile markerFile = perfAlyzerFile.copy();
+						markerFile.setMarker(marker.getName());
+						Path destPath = normalizedDir.toPath().resolve(markerFile.getFile().toPath());
 
-				try (WritableByteChannel destChannel = newByteChannel(destPath, CREATE, WRITE)) {
-					Path srcPath = normalizedDir.toPath().resolve(perfAlyzerFile.getFile().toPath());
-					StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
-					tokenizer.setDelimiterChar(';');
-					try (Stream<String> lines = Files.lines(srcPath, UTF_8);) {
-						lines.filter(line -> {
-							try {
-								tokenizer.reset(line);
-								String timestampString = tokenizer.nextToken();
-								long timestamp = Long.parseLong(timestampString);
-								return marker.getLeftMillis() <= timestamp && marker.getRightMillis() > timestamp;
-							} catch (NumberFormatException ex) {
-								LOG.error("Invalid data line: {}", line);
-								return false;
+						try (WritableByteChannel destChannel = newByteChannel(destPath, CREATE, WRITE)) {
+							Path srcPath = normalizedDir.toPath().resolve(
+									perfAlyzerFile.getFile().toPath());
+							StrTokenizer tokenizer = StrTokenizer.getCSVInstance();
+							tokenizer.setDelimiterChar(';');
+							try (Stream<String> lines = Files.lines(srcPath, UTF_8);) {
+								lines
+										.filter(line -> {
+											try {
+												tokenizer.reset(line);
+												String timestampString = tokenizer.nextToken();
+												long timestamp = Long.parseLong(timestampString);
+												return marker.getLeftMillis() <= timestamp &&
+														marker.getRightMillis() > timestamp;
+											} catch (NumberFormatException ex) {
+												LOG.error("Invalid data line: {}", line);
+												return false;
+											}
+										})
+										.forEach(
+												line -> writeLineToChannel(destChannel, line, UTF_8));
 							}
-						}).forEach(line -> writeLineToChannel(destChannel, line, UTF_8));
-					}
-				} catch (IOException e) {
-					throw new UncheckedIOException(e);
-				}
-			}));
+						} catch (IOException e) {
+							throw new UncheckedIOException(e);
+						}
+					}));
 		}
 	}
 
