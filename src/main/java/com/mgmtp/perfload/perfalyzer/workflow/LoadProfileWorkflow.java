@@ -16,6 +16,7 @@
 package com.mgmtp.perfload.perfalyzer.workflow;
 
 import com.google.common.collect.ImmutableList;
+import com.mgmtp.perfload.perfalyzer.util.NumberFormatProvider;
 import com.mgmtp.perfload.perfalyzer.PerfAlyzerException;
 import com.mgmtp.perfload.perfalyzer.annotations.IntFormat;
 import com.mgmtp.perfload.perfalyzer.binning.Binner;
@@ -34,12 +35,8 @@ import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
 import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
 import org.slf4j.MDC;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
-import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -53,14 +50,12 @@ import static java.util.stream.Collectors.toList;
 /**
  * @author rnaegele
  */
-@Singleton
 public class LoadProfileWorkflow extends AbstractWorkflow {
 
-	@Inject
-	public LoadProfileWorkflow(@IntFormat final Provider<NumberFormat> intNumberFormatProvider,
-			@IntFormat final Provider<NumberFormat> numberFormatProvider1, final List<DisplayData> displayDataList,
+	public LoadProfileWorkflow(@IntFormat final NumberFormatProvider intProvider,
+			@IntFormat final NumberFormatProvider intProvider2, final List<DisplayData> displayDataList,
 			final ResourceBundle resourceBundle, final PlotCreator plotCreator, final TestMetadata testMetadata) {
-		super(null, intNumberFormatProvider, numberFormatProvider1, displayDataList, resourceBundle, testMetadata, plotCreator);
+		super(null, intProvider, intProvider2, displayDataList, resourceBundle, testMetadata, plotCreator);
 	}
 
 	@Override

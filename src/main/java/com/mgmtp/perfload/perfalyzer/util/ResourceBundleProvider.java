@@ -28,9 +28,6 @@ import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 import java.util.ResourceBundle.Control;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,18 +40,16 @@ import com.google.common.collect.ImmutableList;
  * 
  * @author rnaegele
  */
-public class ResourceBundleProvider implements Provider<ResourceBundle> {
+public class ResourceBundleProvider {
 
 	private final Locale locale;
 	private final Control control;
 
-	@Inject
 	public ResourceBundleProvider(final Locale locale, final Control control) {
 		this.control = control;
 		this.locale = locale;
 	}
 
-	@Override
 	public ResourceBundle get() {
 		return ResourceBundle.getBundle("strings", locale, control);
 	}

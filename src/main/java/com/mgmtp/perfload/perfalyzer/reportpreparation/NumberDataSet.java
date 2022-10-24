@@ -112,7 +112,6 @@ public class NumberDataSet extends AbstractSeriesDataset implements IntervalXYDa
 		return seriesList.size();
 	}
 
-	@SuppressWarnings("rawtypes")
 	@Override
 	public Comparable<String> getSeriesKey(final int series) {
 		return seriesList.get(series).name;

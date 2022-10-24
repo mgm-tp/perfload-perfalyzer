@@ -15,12 +15,12 @@
  */
 package com.mgmtp.perfload.perfalyzer.binning;
 
-import com.google.common.base.Charsets;
-import com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants;
-import com.mgmtp.perfload.perfalyzer.util.ChannelManager;
-import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
-import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.commons.lang3.text.StrBuilder;
+import static com.google.common.collect.Maps.newHashMap;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_ERROR_MSG;
+import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_RESULT;
+import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
+import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
@@ -29,12 +29,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 
-import static com.google.common.collect.Maps.newHashMap;
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_ERROR_MSG;
-import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_RESULT;
-import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
-import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
+import javax.annotation.Nullable;
+
+import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.commons.lang3.text.StrBuilder;
+
+import com.google.common.base.Charsets;
+import com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants;
+import com.mgmtp.perfload.perfalyzer.util.ChannelManager;
+import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
 
 /**
  * @author rnaegele
@@ -48,7 +51,7 @@ public class ErrorCountBinningStragegy extends AbstractBinningStrategy {
 	}
 
 	@Override
-	public void binData(final Scanner scanner, final WritableByteChannel destChannel) throws IOException {
+	public void binData(final Scanner scanner, @Nullable final WritableByteChannel destChannel) throws IOException {
 		BinManager binManager = new BinManager(startOfFirstBin, PerfAlyzerConstants.BIN_SIZE_MILLIS_30_SECONDS);
 
 		while (scanner.hasNextLine()) {

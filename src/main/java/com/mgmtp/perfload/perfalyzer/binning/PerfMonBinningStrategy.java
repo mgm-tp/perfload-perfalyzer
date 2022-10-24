@@ -31,6 +31,8 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.Scanner;
 
+import javax.annotation.Nullable;
+
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
 import static com.mgmtp.perfload.perfalyzer.util.IoUtilities.writeLineToChannel;
 import static com.mgmtp.perfload.perfalyzer.util.StrBuilderUtils.appendEscapedAndQuoted;
@@ -51,7 +53,7 @@ public class PerfMonBinningStrategy extends AbstractBinningStrategy {
 	}
 
 	@Override
-	public void binData(final Scanner scanner, final WritableByteChannel destChannel) throws IOException {
+	public void binData(final Scanner scanner, @Nullable final WritableByteChannel destChannel) throws IOException {
 		while (scanner.hasNextLine()) {
 			String line = scanner.nextLine();
 			tokenizer.reset(line);

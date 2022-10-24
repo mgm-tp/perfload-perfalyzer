@@ -23,6 +23,8 @@ import java.nio.channels.WritableByteChannel;
 import java.text.NumberFormat;
 import java.util.Scanner;
 
+import javax.annotation.Nullable;
+
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_REQUEST_TYPE;
 
 /**
@@ -41,7 +43,7 @@ public class MeasuringRequestsBinningStrategy extends AbstractBinningStrategy {
 	}
 
 	@Override
-	public void binData(final Scanner scanner, final WritableByteChannel destChannel) throws IOException {
+	public void binData(final Scanner scanner, @Nullable final WritableByteChannel destChannel) throws IOException {
 		BinManager binManager = new BinManager(startOfFirstBin, binSize); // new ChannelBinManager(binSize, destChannel, "seconds", "count", intNumberFormat);
 
 		while (scanner.hasNextLine()) {

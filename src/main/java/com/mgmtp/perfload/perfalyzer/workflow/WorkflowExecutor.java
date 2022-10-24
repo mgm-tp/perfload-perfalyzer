@@ -25,9 +25,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +34,6 @@ import com.mgmtp.perfload.perfalyzer.util.Marker;
 /**
  * @author rnaegele
  */
-@Singleton
 public class WorkflowExecutor {
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -45,7 +41,6 @@ public class WorkflowExecutor {
 	private final ExecutorService execService;
 	private final List<Marker> markers;
 
-	@Inject
 	public WorkflowExecutor(final Set<Workflow> workflows, final ExecutorService execService, final List<Marker> markers) {
 		this.workflows = workflows;
 		this.execService = execService;

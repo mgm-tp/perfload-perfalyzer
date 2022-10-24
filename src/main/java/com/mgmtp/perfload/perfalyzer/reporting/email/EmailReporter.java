@@ -33,8 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import javax.mail.Authenticator;
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -70,7 +68,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  *
  * @author rnaegele
  */
-@Singleton
 public class EmailReporter {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -89,7 +86,6 @@ public class EmailReporter {
 	private final int maxHistoryItems;
 	private final Map<String, List<Pattern>> reportContentsConfigMap;
 
-	@Inject
 	public EmailReporter(final TestMetadata testMetadata, @ReportPreparationDir final File soureDir, final ResourceBundle resourceBundle,
 			final Locale locale, @Nullable @ReportsBaseUrl final String reportsBaseUrl, @RelativeDestDir final File destDir,
 			@EmailFrom final String fromAddress, @EmailTo final List<String> toAddresses, @SmtpProps final Properties smtpProps,

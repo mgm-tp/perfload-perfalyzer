@@ -52,7 +52,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
-import javax.inject.Singleton;
 import org.apache.commons.lang3.text.StrTokenizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +67,6 @@ import org.slf4j.LoggerFactory;
  * 
  *           Changes: Removed Guice injection.
  */
-@Singleton
 public class PerfAlyzer {
 
 	private static final Logger LOG = LoggerFactory.getLogger(PerfAlyzer.class);
@@ -145,9 +143,11 @@ public class PerfAlyzer {
 			LOG.info("Total execution time: {}", stopwatch);
 		} catch (ParameterException ex) {
 			LOG.error(ex.getMessage());
-			StringBuilder sb = new StringBuilder(200);
-			jCmd.usage(sb);
-			LOG.info(sb.toString());
+			if (jCmd != null) {
+				StringBuilder sb = new StringBuilder(200);
+				jCmd.usage(sb);
+				LOG.info(sb.toString());
+			}
 			System.exit(1);
 		} catch (Exception ex) {
 			LOG.error(ex.getMessage(), ex);

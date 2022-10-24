@@ -15,6 +15,19 @@
  */
 package com.mgmtp.perfload.perfalyzer.workflow;
 
+import static com.mgmtp.perfload.perfalyzer.util.DirectoryLister.listFiles;
+import static com.mgmtp.perfload.perfalyzer.util.DirectoryLister.listPerfAlyzerFiles;
+import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.fileNameEquals;
+import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.perfAlyzerFileNameContains;
+import static java.util.stream.Collectors.toList;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.ResourceBundle;
+
+import org.slf4j.MDC;
+
 import com.google.common.collect.ImmutableList;
 import com.mgmtp.perfload.perfalyzer.PerfAlyzerException;
 import com.mgmtp.perfload.perfalyzer.annotations.IntFormat;
@@ -28,37 +41,20 @@ import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.ReportPreparationStrategy;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.ReporterPreparator;
 import com.mgmtp.perfload.perfalyzer.util.Marker;
+import com.mgmtp.perfload.perfalyzer.util.NumberFormatProvider;
 import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
 import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
 import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
-import org.slf4j.MDC;
-
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import java.io.File;
-import java.io.IOException;
-import java.text.NumberFormat;
-import java.util.List;
-import java.util.ResourceBundle;
-
-import static com.mgmtp.perfload.perfalyzer.util.DirectoryLister.listFiles;
-import static com.mgmtp.perfload.perfalyzer.util.DirectoryLister.listPerfAlyzerFiles;
-import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.fileNameEquals;
-import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.perfAlyzerFileNameContains;
-import static java.util.stream.Collectors.toList;
 
 /**
  * @author rnaegele
  */
-@Singleton
 public class PerfMonWorkflow extends AbstractWorkflow {
 
-	@Inject
-	public PerfMonWorkflow(final TimestampNormalizer timestampNormalizer, @IntFormat final Provider<NumberFormat> intNumberFormatProvider,
-			@IntFormat final Provider<NumberFormat> numberFormatProvider1, final List<DisplayData> displayDataList,
+	public PerfMonWorkflow(final TimestampNormalizer timestampNormalizer, @IntFormat final NumberFormatProvider intProvider,
+			@IntFormat final NumberFormatProvider intProvider2, final List<DisplayData> displayDataList,
 			final ResourceBundle resourceBundle, final PlotCreator plotCreator, final TestMetadata testMetadata) {
-		super(timestampNormalizer, intNumberFormatProvider, numberFormatProvider1, displayDataList, resourceBundle, testMetadata, plotCreator);
+		super(timestampNormalizer, intProvider, intProvider2, displayDataList, resourceBundle, testMetadata, plotCreator);
 	}
 
 	@Override

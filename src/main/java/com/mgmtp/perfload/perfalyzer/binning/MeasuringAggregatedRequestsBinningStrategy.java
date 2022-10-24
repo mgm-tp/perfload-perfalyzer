@@ -27,6 +27,8 @@ import java.nio.channels.WritableByteChannel;
 import java.text.NumberFormat;
 import java.util.Scanner;
 
+import javax.annotation.Nullable;
+
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.DELIMITER;
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_REQUEST_TYPE;
 import static com.mgmtp.perfload.perfalyzer.constants.PerfAlyzerConstants.MEASURING_NORMALIZED_COL_RESULT;
@@ -45,7 +47,7 @@ public class MeasuringAggregatedRequestsBinningStrategy extends AbstractBinningS
 	}
 
 	@Override
-	public void binData(final Scanner scanner, final WritableByteChannel destChannel) throws IOException {
+	public void binData(final Scanner scanner, @Nullable final WritableByteChannel destChannel) throws IOException {
 		BinManager binSecondManager = new BinManager(startOfFirstBin, PerfAlyzerConstants.BIN_SIZE_MILLIS_1_SECOND);
 		BinManager binMinuteManager = new BinManager(startOfFirstBin, PerfAlyzerConstants.BIN_SIZE_MILLIS_1_MINUTE);
 

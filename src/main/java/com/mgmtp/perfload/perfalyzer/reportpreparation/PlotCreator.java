@@ -35,8 +35,6 @@ import org.jfree.ui.RectangleAnchor;
 import org.jfree.ui.RectangleInsets;
 
 import javax.imageio.ImageIO;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
@@ -59,7 +57,6 @@ import static com.mgmtp.perfload.perfalyzer.util.PerfAlyzerUtils.selectDisplayDa
 /**
  * @author rnaegele
  */
-@Singleton
 public class PlotCreator {
 
 	private static final StandardChartTheme CHART_THEME = new StandardChartTheme("JFree");
@@ -129,7 +126,6 @@ public class PlotCreator {
 	private final List<DisplayData> displayDataList;
 	private final List<Marker> markers;
 
-	@Inject
 	public PlotCreator(@IntFormat final NumberFormat numberFormat, final ResourceBundle resourceBundle,
 			final List<DisplayData> displayDataList, final List<Marker> markers) {
 		this.numberFormat = numberFormat;

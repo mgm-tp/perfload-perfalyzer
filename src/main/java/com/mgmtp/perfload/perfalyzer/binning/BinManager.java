@@ -19,8 +19,6 @@ import com.google.common.base.Charsets;
 import com.mgmtp.perfload.perfalyzer.util.AggregationType;
 import org.apache.commons.lang3.text.StrBuilder;
 import org.apache.commons.math3.stat.StatUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.channels.WritableByteChannel;
 import java.text.NumberFormat;
@@ -45,8 +43,6 @@ import static java.util.stream.IntStream.range;
  * @author rnaegele
  */
 public class BinManager {
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(BinManager.class);
 
 	private final double domainStart;
 	private final List<Bin> bins = new ArrayList<>(50);

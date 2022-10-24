@@ -15,32 +15,6 @@
  */
 package com.mgmtp.perfload.perfalyzer.workflow;
 
-import com.google.common.collect.ImmutableList;
-import com.mgmtp.perfload.perfalyzer.PerfAlyzerException;
-import com.mgmtp.perfload.perfalyzer.annotations.FloatFormat;
-import com.mgmtp.perfload.perfalyzer.annotations.IntFormat;
-import com.mgmtp.perfload.perfalyzer.reportpreparation.DisplayData;
-import com.mgmtp.perfload.perfalyzer.reportpreparation.GcLogReportPreparationStrategy;
-import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator;
-import com.mgmtp.perfload.perfalyzer.reportpreparation.ReporterPreparator;
-import com.mgmtp.perfload.perfalyzer.util.Marker;
-import com.mgmtp.perfload.perfalyzer.util.MemoryFormat;
-import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
-import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
-import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
-import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.lang3.text.StrBuilder;
-
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import java.io.File;
-import java.io.IOException;
-import java.text.NumberFormat;
-import java.util.Collections;
-import java.util.List;
-import java.util.ResourceBundle;
-
 import static com.mgmtp.perfload.perfalyzer.util.DirectoryLister.listFiles;
 import static com.mgmtp.perfload.perfalyzer.util.DirectoryLister.listPerfAlyzerFiles;
 import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.fileNameStartsWith;
@@ -54,20 +28,42 @@ import static org.apache.commons.lang3.StringUtils.split;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.ResourceBundle;
+
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.text.StrBuilder;
+
+import com.google.common.collect.ImmutableList;
+import com.mgmtp.perfload.perfalyzer.PerfAlyzerException;
+import com.mgmtp.perfload.perfalyzer.annotations.FloatFormat;
+import com.mgmtp.perfload.perfalyzer.annotations.IntFormat;
+import com.mgmtp.perfload.perfalyzer.reportpreparation.DisplayData;
+import com.mgmtp.perfload.perfalyzer.reportpreparation.GcLogReportPreparationStrategy;
+import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator;
+import com.mgmtp.perfload.perfalyzer.reportpreparation.ReporterPreparator;
+import com.mgmtp.perfload.perfalyzer.util.Marker;
+import com.mgmtp.perfload.perfalyzer.util.MemoryFormatProvider;
+import com.mgmtp.perfload.perfalyzer.util.NumberFormatProvider;
+import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
+import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
+import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
+
 /**
  * @author rnaegele
  */
-@Singleton
 public class GcLogWorkflow extends AbstractWorkflow {
 
-	private final Provider<MemoryFormat> memoryFormatProvider;
+	private final MemoryFormatProvider memoryFormatProvider;
 
-	@Inject
-	public GcLogWorkflow(final TimestampNormalizer timestampNormalizer, @IntFormat final Provider<NumberFormat> intNumberFormatProvider,
-			@FloatFormat final Provider<NumberFormat> floatNumberFormatProvider, final List<DisplayData> displayDataList,
+	public GcLogWorkflow(final TimestampNormalizer timestampNormalizer, @IntFormat final NumberFormatProvider intProvider,
+			@FloatFormat final NumberFormatProvider floatNumberFormatProvider, final List<DisplayData> displayDataList,
 			final ResourceBundle resourceBundle, final PlotCreator plotCreator, final TestMetadata testMetadata,
-			final Provider<MemoryFormat> memoryFormatProvider) {
-		super(timestampNormalizer, intNumberFormatProvider, floatNumberFormatProvider, displayDataList, resourceBundle, testMetadata, plotCreator);
+			final MemoryFormatProvider memoryFormatProvider) {
+		super(timestampNormalizer, intProvider, floatNumberFormatProvider, displayDataList, resourceBundle, testMetadata, plotCreator);
 		this.memoryFormatProvider = memoryFormatProvider;
 	}
 

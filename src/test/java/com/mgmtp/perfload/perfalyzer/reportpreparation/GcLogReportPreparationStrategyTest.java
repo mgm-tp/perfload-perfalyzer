@@ -33,12 +33,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
-import static com.mgmtp.perfload.perfalyzer.util.DirectoryLister.listPerfAlyzerFiles;
-import static com.mgmtp.perfload.perfalyzer.util.PerfPredicates.perfAlyzerFileNameContains;
 import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.loadProperties;
-import static com.mgmtp.perfload.perfalyzer.util.PropertiesUtils.setIfNonNull;
-import static java.util.stream.Collectors.toList;
-import static org.testng.Assert.*;
 
 /**
  * Created by amueller on 07.10.2019.

@@ -34,6 +34,9 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import javax.annotation.Nullable;
+
 import java.util.Scanner;
 import java.util.Set;
 
@@ -70,7 +73,7 @@ public class MeasuringResponseTimesBinningStrategy extends AbstractBinningStrate
 	}
 
 	@Override
-	public void binData(final Scanner scanner, final WritableByteChannel destChannel) throws IOException {
+	public void binData(final Scanner scanner, @Nullable final WritableByteChannel destChannel) throws IOException {
 		while (scanner.hasNextLine()) {
 			tokenizer.reset(scanner.nextLine());
 			String[] tokens = tokenizer.getTokenArray();

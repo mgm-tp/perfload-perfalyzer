@@ -25,16 +25,11 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
 
 import java.io.File;
-import java.text.NumberFormat;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
 
 import org.slf4j.MDC;
 
@@ -61,6 +56,7 @@ import com.mgmtp.perfload.perfalyzer.util.CsvFileSortMerger;
 import com.mgmtp.perfload.perfalyzer.util.CsvTimestampColumnComparator;
 import com.mgmtp.perfload.perfalyzer.util.DirectoryLister;
 import com.mgmtp.perfload.perfalyzer.util.Marker;
+import com.mgmtp.perfload.perfalyzer.util.NumberFormatProvider;
 import com.mgmtp.perfload.perfalyzer.util.PerfAlyzerFile;
 import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
 import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
@@ -68,17 +64,15 @@ import com.mgmtp.perfload.perfalyzer.util.TimestampNormalizer;
 /**
  * @author ctchinda
  */
-@Singleton
 public class MeasuringWorkflow extends AbstractWorkflow {
 
 	private final int maxHistoryItems;
 
-	@Inject
-	public MeasuringWorkflow(final TimestampNormalizer timestampNormalizer, @IntFormat final Provider<NumberFormat> intNumberFormatProvider,
-			@FloatFormat final Provider<NumberFormat> floatNumberFormatProvider, final List<DisplayData> displayDataList,
+	public MeasuringWorkflow(final TimestampNormalizer timestampNormalizer, @IntFormat final NumberFormatProvider intProvider,
+			@FloatFormat final NumberFormatProvider floatNumberFormatProvider, final List<DisplayData> displayDataList,
 			final ResourceBundle resourceBundle, final PlotCreator plotCreator, final TestMetadata testMetadata,
 			@MaxHistoryItems final int maxHistoryItems) {
-		super(timestampNormalizer, intNumberFormatProvider, floatNumberFormatProvider, displayDataList, resourceBundle, testMetadata, plotCreator);
+		super(timestampNormalizer, intProvider, floatNumberFormatProvider, displayDataList, resourceBundle, testMetadata, plotCreator);
 		this.maxHistoryItems = maxHistoryItems;
 	}
 
@@ -246,11 +240,10 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 		return ImmutableList.of(task);
 	}
 
-	static class LatchProvider implements Provider<CountDownLatch> {
+	static class LatchProvider {
 
 		CountDownLatch latch;
 
-		@Override
 		public CountDownLatch get() {
 			return latch;
 		}

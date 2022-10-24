@@ -31,8 +31,6 @@ import org.apache.commons.lang3.text.StrTokenizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -72,7 +70,6 @@ import static org.apache.commons.lang3.StringUtils.substringBefore;
 /**
  * @author rnaegele
  */
-@Singleton
 public class ReportCreator {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -87,7 +84,6 @@ public class ReportCreator {
 	private final Locale locale;
 	private final List<String> tabNames;
 
-	@Inject
 	public ReportCreator(final TestMetadata testMetadata, @ReportPreparationDir final File soureDir,
 			@ReportDir final File destDir, final Map<String, List<Pattern>> reportContentsConfigMap,
 			final ResourceBundle resourceBundle, final Locale locale, @ReportTabNames final List<String> tabNames) {
@@ -243,12 +239,10 @@ public class ReportCreator {
 				if (headers == null) {
 					headers = Lists.transform(tokenList, resourceBundle::getString);
 					valueColumnsCount = tokenList.size() - 1;
-					// TODO make that nicer
-					if (file.getPath().startsWith("global") && !fileName.startsWith("[measuring][executions]") &&
-							!fileName.contains("[distribution]")) {
-						valueColumnsCount--;
-					} else if (fileName.contains("[distribution]")) {
+					if (fileName.contains("[distribution]")) {
 						valueColumnsCount -= 2;
+					} else if (file.getPath().startsWith("global") && !fileName.startsWith("[measuring][executions]")) {
+						valueColumnsCount--;
 					}
 				} else {
 					rows.add(tokenList);

@@ -24,6 +24,8 @@ import java.nio.channels.WritableByteChannel;
 import java.text.NumberFormat;
 import java.util.Scanner;
 
+import javax.annotation.Nullable;
+
 /**
  * Binning implementation for perfMon logs.
  *
@@ -36,7 +38,7 @@ public class LoadProfileBinningStrategy extends AbstractBinningStrategy {
 	}
 
 	@Override
-	public void binData(final Scanner scanner, final WritableByteChannel destChannel) throws IOException {
+	public void binData(final Scanner scanner, @Nullable final WritableByteChannel destChannel) throws IOException {
 		BinManager binManager = new BinManager(0L, PerfAlyzerConstants.BIN_SIZE_MILLIS_1_MINUTE);
 
 		while (scanner.hasNextLine()) {

@@ -15,10 +15,6 @@ import static org.apache.commons.io.filefilter.FileFilterUtils.suffixFileFilter;
 
 import java.io.File;
 import java.io.IOException;
-import java.math.RoundingMode;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -37,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Throwables;
-import com.google.inject.Provider;
 import com.mgmtp.perfload.perfalyzer.reporting.ReportCreator;
 import com.mgmtp.perfload.perfalyzer.reporting.email.EmailReporter;
 import com.mgmtp.perfload.perfalyzer.reportpreparation.DisplayData;
@@ -45,7 +40,6 @@ import com.mgmtp.perfload.perfalyzer.reportpreparation.PlotCreator;
 import com.mgmtp.perfload.perfalyzer.util.ArchiveExtracter;
 import com.mgmtp.perfload.perfalyzer.util.Marker;
 import com.mgmtp.perfload.perfalyzer.util.MarkersReader;
-import com.mgmtp.perfload.perfalyzer.util.MemoryFormat;
 import com.mgmtp.perfload.perfalyzer.util.ResourceBundleProvider;
 import com.mgmtp.perfload.perfalyzer.util.ResourceBundleProvider.Utf8Control;
 import com.mgmtp.perfload.perfalyzer.util.TestMetadata;
@@ -56,6 +50,8 @@ import com.mgmtp.perfload.perfalyzer.workflow.MeasuringWorkflow;
 import com.mgmtp.perfload.perfalyzer.workflow.PerfMonWorkflow;
 import com.mgmtp.perfload.perfalyzer.workflow.Workflow;
 import com.mgmtp.perfload.perfalyzer.workflow.WorkflowExecutor;
+import com.mgmtp.perfload.perfalyzer.util.NumberFormatProvider;
+import com.mgmtp.perfload.perfalyzer.util.MemoryFormatProvider;
 
 import groovy.util.ConfigObject;
 import groovy.util.ConfigSlurper;
@@ -145,7 +141,7 @@ class PerfAlyzerFactory {
 
 		final TimestampNormalizer timestampNormalizer = new TimestampNormalizer(testMetadata.getTestStart(),
 				testMetadata.getTestEnd(), configObject.warmUpSeconds);
-		final Provider<NumberFormat> intProvider = new NumberFormatProvider(configObject.locale, true);
+		final NumberFormatProvider intProvider = new NumberFormatProvider(configObject.locale, true);
 		final ResourceBundleProvider resourceBundleProvider = new ResourceBundleProvider(configObject.locale,
 				new Utf8Control(new File("strings")));
 		List<Marker> markers = provideMarkers(unzippedDir, testMetadata);
@@ -161,8 +157,8 @@ class PerfAlyzerFactory {
 				testMetadata, reportPreparationDir, reportDir, configObject.reportContentsConfigMap,
 				resourceBundleProvider.get(), configObject.locale, reportTabNames);
 
-		final Provider<NumberFormat> floatProvider = new NumberFormatProvider(configObject.locale, false);
-		final Provider<MemoryFormat> memoryFormatProvider = new MemoryFormatProvider(configObject.locale);
+		final NumberFormatProvider floatProvider = new NumberFormatProvider(configObject.locale, false);
+		final MemoryFormatProvider memoryFormatProvider = new MemoryFormatProvider(configObject.locale);
 
 		MeasuringWorkflow measuringWorkflow = new MeasuringWorkflow(
 				timestampNormalizer, intProvider, floatProvider, configObject.displayDataList,
@@ -374,51 +370,5 @@ class PerfAlyzerFactory {
 			throw new NullPointerException("The executorService is not yet initialized.");
 		}
 		return executorService;
-	}
-}
-
-class NumberFormatProvider implements Provider<NumberFormat> {
-
-	final private NumberFormat numberFormat;
-
-	public NumberFormatProvider(final Locale locale, boolean intProvider) {
-		if (intProvider) {
-			this.numberFormat = getInt(locale);
-		} else {
-			this.numberFormat = getFloat(locale);
-		}
-	}
-
-	public NumberFormat get() {
-		return numberFormat;
-	}
-
-	private NumberFormat getInt(final Locale locale) {
-		NumberFormat nf = NumberFormat.getIntegerInstance(locale);
-		nf.setGroupingUsed(false);
-		nf.setRoundingMode(RoundingMode.HALF_UP);
-		return nf;
-	}
-
-	private NumberFormat getFloat(final Locale locale) {
-		DecimalFormatSymbols dfs = new DecimalFormatSymbols(locale);
-		NumberFormat nf = new DecimalFormat("0.00", dfs);
-		nf.setGroupingUsed(false);
-		nf.setRoundingMode(RoundingMode.HALF_UP);
-		return nf;
-	}
-}
-
-class MemoryFormatProvider implements Provider<MemoryFormat> {
-
-	final private MemoryFormat memoryFormat;
-
-	public MemoryFormatProvider(final Locale locale) {
-		this.memoryFormat = new MemoryFormat(locale);
-	}
-
-	@Override
-	public MemoryFormat get() {
-		return memoryFormat;
 	}
 }

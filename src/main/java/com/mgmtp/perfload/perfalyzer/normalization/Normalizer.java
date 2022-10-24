@@ -86,7 +86,8 @@ public class Normalizer {
 		FileInputStream fis = null;
 		try {
 			fis = new FileInputStream(new File(sourceDir, filePath)); //relative to source dir
-			for (Scanner scanner = new Scanner(fis, Charsets.UTF_8.name()); scanner.hasNext();) {
+			Scanner scanner = new Scanner(fis, Charsets.UTF_8.name());
+			while (scanner.hasNext()) {
 				String line = scanner.nextLine();
 				if (trimToNull(line) == null || line.startsWith("#")) {
 					continue;
@@ -110,6 +111,7 @@ public class Normalizer {
 					writeLineToChannel(channel, channelData.getValue(), Charsets.UTF_8);
 				}
 			}
+			scanner.close();
 		} finally {
 			outputStreams.forEach(IOUtils::closeQuietly);
 			closeQuietly(fis);

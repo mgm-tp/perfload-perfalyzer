@@ -15,11 +15,9 @@
  */
 package com.mgmtp.perfload.perfalyzer.workflow;
 
-import java.text.NumberFormat;
+import com.mgmtp.perfload.perfalyzer.util.NumberFormatProvider;
 import java.util.List;
 import java.util.ResourceBundle;
-
-import javax.inject.Provider;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,19 +37,19 @@ public abstract class AbstractWorkflow implements Workflow {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	protected final TimestampNormalizer timestampNormalizer;
-	protected final Provider<NumberFormat> intNumberFormatProvider;
-	protected final Provider<NumberFormat> floatNumberFormatProvider;
+	protected final NumberFormatProvider intNumberFormatProvider;
+	protected final NumberFormatProvider floatNumberFormatProvider;
 	protected final List<DisplayData> displayDataList;
 	protected final ResourceBundle resourceBundle;
 	protected final TestMetadata testMetadata;
 	protected final PlotCreator plotCreator;
 
-	protected AbstractWorkflow(final TimestampNormalizer timestampNormalizer, final Provider<NumberFormat> intNumberFormatProvider,
-			final Provider<NumberFormat> floatNumberFormatProvider, final List<DisplayData> displayDataList, final ResourceBundle resourceBundle,
+	protected AbstractWorkflow(final TimestampNormalizer timestampNormalizer, final NumberFormatProvider intNumberFormatProvider2,
+			final NumberFormatProvider numberFormatProvider1, final List<DisplayData> displayDataList, final ResourceBundle resourceBundle,
 			final TestMetadata testMetadata, final PlotCreator plotCreator) {
 		this.timestampNormalizer = timestampNormalizer;
-		this.intNumberFormatProvider = intNumberFormatProvider;
-		this.floatNumberFormatProvider = floatNumberFormatProvider;
+		this.intNumberFormatProvider = intNumberFormatProvider2;
+		this.floatNumberFormatProvider = numberFormatProvider1;
 		this.displayDataList = displayDataList;
 		this.resourceBundle = resourceBundle;
 		this.testMetadata = testMetadata;

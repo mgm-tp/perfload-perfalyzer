@@ -21,8 +21,6 @@ import java.io.File;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-import javax.inject.Provider;
-
 import org.testng.annotations.Test;
 
 import com.mgmtp.perfload.perfalyzer.util.ResourceBundleProvider.Utf8Control;
@@ -42,7 +40,7 @@ public class ResourceBundleProviderTest {
 
 	@Test
 	public void shouldLoadGermanLocalizations() {
-		Provider<ResourceBundle> provider = new ResourceBundleProvider(Locale.GERMANY, 
+		ResourceBundleProvider provider = new ResourceBundleProvider(Locale.GERMANY, 
 				new Utf8Control(new File("src/test/resources/strings")));
 		ResourceBundle bundle = provider.get();
 		String cpuUsage = bundle.getString("title.cpu");
