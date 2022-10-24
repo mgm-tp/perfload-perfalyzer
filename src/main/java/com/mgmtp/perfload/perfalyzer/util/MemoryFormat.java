@@ -17,11 +17,10 @@ package com.mgmtp.perfload.perfalyzer.util;
 
 import java.text.NumberFormat;
 import java.util.Locale;
-
 import javax.inject.Inject;
 
 /**
- * 
+ *
  * @author rnaegele
  */
 public class MemoryFormat {
@@ -36,7 +35,7 @@ public class MemoryFormat {
 	private final NumberFormat format;
 
 	@Inject
-	MemoryFormat(final Locale locale) {
+	public MemoryFormat(final Locale locale) {
 		format = NumberFormat.getNumberInstance(locale);
 		format.setMaximumFractionDigits(2);
 	}
