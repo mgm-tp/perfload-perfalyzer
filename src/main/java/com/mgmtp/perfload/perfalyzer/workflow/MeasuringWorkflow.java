@@ -207,6 +207,9 @@ public class MeasuringWorkflow extends AbstractWorkflow {
 			try {
 				latchProvider.get().await();
 				RequestFilesMerger merger = new RequestFilesMerger(outputDir);
+				if (!outputDir.exists()) {
+					outputDir.mkdirs();
+				}
 				merger.mergeFiles(listPerfAlyzerFiles(outputDir, marker));
 			} catch (InterruptedException ex) {
 				Thread.currentThread().interrupt();
