@@ -15,3 +15,6 @@ logs
 /distribution/assets/stylesheets/perfalyzer.css.map
 /tmp
 .vscode
+/distribution/input
+/distribution/output
+/distribution/perfload-perfalyzer.jar
