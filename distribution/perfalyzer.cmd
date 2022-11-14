@@ -44,7 +44,7 @@ set JAVA_CMD="%JAVA_HOME%\bin\java"
 
 if exist logback.xml set JAVA_OPTS=%JAVA_OPTS% -Dlogback.configurationFile=logback.xml
 
-set JAVA_OPTS=%JAVA_OPTS% -Xms256m -Xmx512m -jar .\lib\perfload-perfalyzer-${project.version}.jar %*
+set JAVA_OPTS=%JAVA_OPTS% -Xms256m -Xmx512m -jar .\lib\perfload-perfalyzer-1.2.0.jar %*
 
 
 call %JAVA_CMD% %JAVA_OPTS%
